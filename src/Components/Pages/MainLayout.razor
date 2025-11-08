@@ -1,5 +1,4 @@
 ﻿@inherits LayoutComponentBase
-@inject IJSRuntime JSRuntime
 
 <ToastProvider />
 
@@ -22,7 +21,7 @@
         </div>
     </header>
 
-    <main class=" grow bg-white dark:bg-[#121212]">
+    <main class="grow">
         <div class="max-w-screen-2xl mx-auto">
             <ErrorBoundary>
                 <ChildContent>
@@ -46,3 +45,4 @@
     <footer class="bg-white dark:bg-[#1E1E1E]">
     </footer>
 </div>
+

@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Components;
-using BlazorMonaco;
 using BlazorMonaco.Editor;
 using JsonToCsharpPoco.Converter;
 using Microsoft.JSInterop;
@@ -11,7 +10,6 @@ using System.ComponentModel;
 using Blazored.LocalStorage;
 using JsonToCsharpPoco.Shared;
 using JsonToCsharpPoco.Resources;
-using Humanizer;
 
 namespace JsonToCsharpPoco.Components.Pages;
 
