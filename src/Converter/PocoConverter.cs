@@ -1,29 +1,118 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using JsonToCsharpPoco.Models;
 using JsonToCsharpPoco.Extensions;
 using JsonToCsharpPoco.Models.Enums;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Humanizer;
+
 namespace JsonToCsharpPoco.Converter;
 
-public partial class CSharpPocoBuilder
+public class PocoConverter
 {
-    public string Build(JsonElement rootElement, ConversionSettings options)
+
+    public bool TryConvertJsonToCSharp(string json, ConversionSettings options, out string result)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+
+            if (root.ValueKind == JsonValueKind.Array)
+            {
+                if (root.GetArrayLength() == 0)
+                    throw new InvalidOperationException("JSON array is empty. Cannot convert to C# POCO.");
+
+                root = root[0];
+
+                if (root.ValueKind != JsonValueKind.Object)
+                    throw new InvalidOperationException("First element in JSON array must be an object.");
+            }
+            else if (root.ValueKind != JsonValueKind.Object)
+            {
+                throw new InvalidOperationException("JSON root must be an object or array of objects.");
+            }
+
+            result = BuildFromJson(root, options);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            result = $"Error converting JSON to C#: {ex.Message}";
+            return false;
+        }
+    }
+
+    public bool TryConvertCSharpToJson(string csharpCode, bool indented, out string result)
+    {
+        try
+        {
+            // Try object initializer first
+            result = ConvertCsharpObjectStringToJson(csharpCode, indented);
+            return true;
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("No object initializer found"))
+        {
+            // Fallback: treat as POCO class source
+            result = ConvertCsharpSourceToJson(csharpCode, indented);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            result = $"Error converting C# to JSON: {ex.Message}";
+            return false;
+        }
+    }
+    public bool TryConvertCSharpToTypeScript(string csharpCode, out string tsCode, string rootName = "Root", int indent = 2)
+    {
+        try
+        {
+            var tree = CSharpSyntaxTree.ParseText(csharpCode);
+            var root = tree.GetRoot();
+
+            // Detect object initializer
+            var objectCreation = root.DescendantNodes()
+                .OfType<ObjectCreationExpressionSyntax>()
+                .FirstOrDefault();
+
+            if (objectCreation != null)
+            {
+                // It's an object initializer → produce TypeScript object literal
+                tsCode = ConvertCSharpObjectToTypeScript(csharpCode, indent);
+            }
+            else
+            {
+                // Otherwise treat as class definition → produce TypeScript interface
+                tsCode = ConvertCSharpToTypeScript(csharpCode, rootName, indent);
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            tsCode = $"Error converting C# to TypeScript: {ex.Message}";
+            return false;
+        }
+    }
+
+
+
+    public string BuildFromJson(JsonElement rootElement, ConversionSettings options)
     {
         var declarations = new List<MemberDeclarationSyntax>();
         AddTypeFromJson(rootElement, options.RootTypeName, declarations, options);
 
         BaseNamespaceDeclarationSyntax namespaceDeclaration = options.UseFileScoped
             ? SyntaxFactory.FileScopedNamespaceDeclaration(SyntaxFactory.ParseName(options.Namespace))
-            : SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(options.Namespace)).WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
-              .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken));
+            : SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(options.Namespace))
+                .WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
+                .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken));
 
         namespaceDeclaration = namespaceDeclaration.AddMembers([.. declarations]);
 
         var compilationUnit = SyntaxFactory.CompilationUnit()
-        .AddMembers(namespaceDeclaration);
+            .AddMembers(namespaceDeclaration);
 
         if (options.AddAttribute)
         {
@@ -32,7 +121,175 @@ public partial class CSharpPocoBuilder
         }
 
         return compilationUnit.NormalizeWhitespace().ToFullString();
+    }
 
+    public string ConvertCsharpSourceToJson(string csharpCode, bool indented = true)
+    {
+        if (string.IsNullOrWhiteSpace(csharpCode))
+            throw new ArgumentException("C# source cannot be null or empty.", nameof(csharpCode));
+
+        var tree = CSharpSyntaxTree.ParseText(csharpCode);
+        var root = tree.GetRoot();
+
+        var classNodes = root.DescendantNodes().OfType<ClassDeclarationSyntax>();
+        var jsonSchema = new Dictionary<string, object?>();
+
+        foreach (var cls in classNodes)
+        {
+            var props = new Dictionary<string, object?>();
+            foreach (var prop in cls.Members.OfType<PropertyDeclarationSyntax>())
+            {
+                var name = prop.Identifier.Text;
+                var typeName = prop.Type.ToString();
+                props[name] = GetSampleValueForType(typeName);
+            }
+
+            jsonSchema[cls.Identifier.Text] = props;
+        }
+
+        var options = new JsonSerializerOptions { WriteIndented = indented };
+        return JsonSerializer.Serialize(jsonSchema, options);
+    }
+
+
+    public string ConvertCsharpObjectStringToJson(string csharpCode, bool indented = true)
+    {
+        if (string.IsNullOrWhiteSpace(csharpCode))
+            throw new ArgumentException("C# object string cannot be null or empty.", nameof(csharpCode));
+
+        var tree = CSharpSyntaxTree.ParseText(csharpCode);
+        var root = tree.GetRoot();
+
+        var objectCreation = root.DescendantNodes().OfType<ObjectCreationExpressionSyntax>().FirstOrDefault()
+            ?? throw new InvalidOperationException("No object initializer found in the provided code.");
+
+        var jsonMap = new Dictionary<string, object?>();
+
+        foreach (var initializer in objectCreation.Initializer?.Expressions.OfType<AssignmentExpressionSyntax>() ?? [])
+        {
+            var name = initializer.Left.ToString();
+            var valueSyntax = initializer.Right;
+            jsonMap[name] = ParseLiteralExpression(valueSyntax);
+        }
+
+        var options = new JsonSerializerOptions { WriteIndented = indented };
+        return JsonSerializer.Serialize(jsonMap, options);
+    }
+
+    private object? ParseLiteralExpression(ExpressionSyntax valueSyntax)
+    {
+        return valueSyntax switch
+        {
+            LiteralExpressionSyntax literal => literal.Kind() switch
+            {
+                SyntaxKind.StringLiteralExpression => literal.Token.ValueText,
+                SyntaxKind.NumericLiteralExpression => literal.Token.Value,
+                SyntaxKind.TrueLiteralExpression => true,
+                SyntaxKind.FalseLiteralExpression => false,
+                _ => literal.Token.ValueText
+            },
+            _ => valueSyntax.ToString()
+        };
+    }
+
+
+    private object? GetSampleValueForType(string type)
+    {
+        return type switch
+        {
+            "string" => "",
+            "int" or "double" or "float" or "decimal" => 0,
+            "bool" => false,
+            "DateTime" => DateTime.Now,
+            var t when t.StartsWith("IReadOnlyList") || t.StartsWith("List") || t.EndsWith("[]") => new object[0],
+            _ => null
+        };
+    }
+
+    public string ConvertCSharpToTypeScript(string csharpCode, string rootName = "Root", int indent = 2)
+    {
+        var tree = CSharpSyntaxTree.ParseText(csharpCode);
+        var root = tree.GetRoot();
+
+        var classNodes = root.DescendantNodes().OfType<ClassDeclarationSyntax>();
+        var tsInterfaces = new List<string>();
+
+        foreach (var cls in classNodes)
+        {
+            var lines = new List<string>();
+            var interfaceName = cls.Identifier.Text;
+            lines.Add($"export interface {interfaceName} {{");
+
+            foreach (var prop in cls.Members.OfType<PropertyDeclarationSyntax>())
+            {
+                var tsType = MapCSharpTypeToTypeScript(prop.Type.ToString());
+                lines.Add(new string(' ', indent) + $"{prop.Identifier.Text}: {tsType};");
+            }
+
+            lines.Add("}");
+            tsInterfaces.Add(string.Join("\n", lines));
+        }
+
+        return string.Join("\n\n", tsInterfaces);
+    }
+
+
+    public string ConvertCSharpObjectToTypeScript(string csharpCode, int indent = 2)
+    {
+        var tree = CSharpSyntaxTree.ParseText(csharpCode);
+        var root = tree.GetRoot();
+
+        var objectCreation = root.DescendantNodes()
+            .OfType<ObjectCreationExpressionSyntax>()
+            .FirstOrDefault();
+
+        if (objectCreation == null)
+            throw new InvalidOperationException("No object initializer found in the provided code.");
+
+        var tsLines = new List<string>();
+        tsLines.Add("{");
+
+        foreach (var assign in objectCreation.Initializer?.Expressions.OfType<AssignmentExpressionSyntax>() ?? Enumerable.Empty<AssignmentExpressionSyntax>())
+        {
+            var name = assign.Left.ToString();
+            var valueSyntax = assign.Right;
+            var value = MapExpressionToTypeScript(valueSyntax);
+            tsLines.Add(new string(' ', indent) + $"{name}: {value},");
+        }
+
+        tsLines.Add("}");
+        return string.Join("\n", tsLines);
+    }
+
+
+    private string MapCSharpTypeToTypeScript(string csharpType)
+    {
+        return csharpType switch
+        {
+            "string" => "string",
+            "int" or "double" or "float" or "decimal" => "number",
+            "bool" => "boolean",
+            "DateTime" => "Date",
+            var t when t.EndsWith("[]") => MapCSharpTypeToTypeScript(t.Replace("[]", "")) + "[]",
+            var t when t.StartsWith("IReadOnlyList") || t.StartsWith("List") => MapCSharpTypeToTypeScript(t.Substring(t.IndexOf("<") + 1, t.IndexOf(">") - t.IndexOf("<") - 1)) + "[]",
+            _ => "any"
+        };
+    }
+
+    private string MapExpressionToTypeScript(ExpressionSyntax expr)
+    {
+        return expr switch
+        {
+            LiteralExpressionSyntax literal => literal.Kind() switch
+            {
+                SyntaxKind.StringLiteralExpression => $"\"{literal.Token.ValueText}\"",
+                SyntaxKind.NumericLiteralExpression => literal.Token.ValueText,
+                SyntaxKind.TrueLiteralExpression => "true",
+                SyntaxKind.FalseLiteralExpression => "false",
+                _ => literal.Token.ValueText
+            },
+            _ => expr.ToString()
+        };
     }
 
     private void AddTypeFromJson(JsonElement jsonObject,
@@ -114,8 +371,7 @@ public partial class CSharpPocoBuilder
         {
             JsonValueKind.Number => value.TryGetInt32(out _) ? "int" : "double",
             JsonValueKind.String => DateTime.TryParse(value.GetString(), out _) ? "DateTime" : "string",
-            JsonValueKind.True => "bool",
-            JsonValueKind.False => "bool",
+            JsonValueKind.True or JsonValueKind.False => "bool",
             JsonValueKind.Array => DetermineArrayType(value, propertyName, arrayType),
             JsonValueKind.Object => propertyName.ToPascalCase(),
             _ => "object"
@@ -142,7 +398,6 @@ public partial class CSharpPocoBuilder
 
         if (!array.EnumerateArray().Any())
         {
-
             elementType = "object";
         }
         else
@@ -168,7 +423,6 @@ public partial class CSharpPocoBuilder
             _ => throw new ArgumentOutOfRangeException(nameof(arrayType), arrayType, null)
         };
     }
-
 
     private PropertyDeclarationSyntax GenerateClassProperty(string propertyName, string propertyType, ConversionSettings options)
     {
@@ -212,25 +466,23 @@ public partial class CSharpPocoBuilder
         return propertyDeclaration;
     }
 
-
     private AccessorDeclarationSyntax[] GenerateAccessors(ConversionSettings options)
     {
         return options.PropertyAccess switch
         {
             PropertyAccess.Mutable =>
             [
-            SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
-            SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
-        ],
+                SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+            ],
             PropertyAccess.Immutable =>
             [
-            SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
-            SyntaxFactory.AccessorDeclaration(SyntaxKind.InitAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
-        ],
+                SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                SyntaxFactory.AccessorDeclaration(SyntaxKind.InitAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+            ],
             _ => []
         };
     }
-
 
     private AttributeSyntax CreateJsonPropertyNameAttribute(string propertyName)
     {
@@ -239,7 +491,6 @@ public partial class CSharpPocoBuilder
 
         return SyntaxFactory.Attribute(SyntaxFactory.ParseName("JsonPropertyName")).AddArgumentListArguments(argument);
     }
-
 
     private ParameterSyntax GenerateRecordParameter(string propertyName, string propertyType, ConversionSettings options)
     {
@@ -298,6 +549,4 @@ public partial class CSharpPocoBuilder
 
         return properties;
     }
-
-
 }

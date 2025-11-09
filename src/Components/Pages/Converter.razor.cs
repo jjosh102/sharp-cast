@@ -15,7 +15,7 @@ namespace JsonToCsharpPoco.Components.Pages;
 
 public partial class Converter : ComponentBase, IDisposable
 {
-    private readonly JsonToCSharp _jsonToCSharp;
+    private readonly PocoConverter _pocoConverter;
     private readonly ISyncLocalStorageService _localStorageService;
     private readonly ILocalStorageService _localStorageServiceAsync;
     private readonly IJSRuntime _jsRuntime;
@@ -31,13 +31,13 @@ public partial class Converter : ComponentBase, IDisposable
     private bool _isConverting;
 
     public Converter(
-        JsonToCSharp jsonToCSharp,
+        PocoConverter pocoConverter,
         IJSRuntime jsRuntime,
         ISyncLocalStorageService localStorageService,
         ILocalStorageService localStorageServiceAsync,
         ToastService toastService)
     {
-        _jsonToCSharp = jsonToCSharp;
+        _pocoConverter = pocoConverter;
         _jsRuntime = jsRuntime;
         _localStorageService = localStorageService;
         _localStorageServiceAsync = localStorageServiceAsync;
@@ -104,7 +104,7 @@ public partial class Converter : ComponentBase, IDisposable
     private async Task Convert()
     {
         _isConverting = true;
-        await Task.Delay(1000);
+        await Task.Delay(500);
 
         var jsonToConvert = await _jsonEditor.GetValue();
         if (string.IsNullOrWhiteSpace(jsonToConvert))
@@ -114,9 +114,35 @@ public partial class Converter : ComponentBase, IDisposable
             return;
         }
 
-        if (_jsonToCSharp.TryConvertJsonToCsharp(jsonToConvert, _conversionSettings, out var result))
+        if (_pocoConverter.TryConvertJsonToCSharp(jsonToConvert, _conversionSettings, out var result))
         {
             await _csharpEditor.SetValue(result);
+            await ShowToastAsync(Localizer.JsonConversionSuccess, ToastType.Success, Localizer.ConversionSuccess);
+        }
+        else
+        {
+            await ShowToastAsync(Localizer.JsonConversionError, ToastType.Error, $"{Localizer.ConversionFailed} - {result}");
+        }
+
+        _isConverting = false;
+    }
+
+    private async Task ConvertToJson()
+    {
+        _isConverting = true;
+        await Task.Delay(500);
+
+        var pocoToConvert = await _csharpEditor.GetValue();
+        if (string.IsNullOrWhiteSpace(pocoToConvert))
+        {
+            await ShowToastAsync(Localizer.EnterJson, ToastType.Error, "Error");
+            _isConverting = false;
+            return;
+        }
+
+        if (_pocoConverter.TryConvertCSharpToTypeScript(pocoToConvert, out var result))
+        {
+            await _jsonEditor.SetValue(result);
             await ShowToastAsync(Localizer.JsonConversionSuccess, ToastType.Success, Localizer.ConversionSuccess);
         }
         else
