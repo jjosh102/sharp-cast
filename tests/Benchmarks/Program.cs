@@ -1,6 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using JsonToCsharpPoco.Benchmarks;
+using SharpCast.Benchmarks;
 
 [InProcessAttribute]
 public class RunBenchmarks

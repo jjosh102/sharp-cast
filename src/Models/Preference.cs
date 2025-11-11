@@ -1,4 +1,4 @@
-namespace JsonToCsharpPoco.Models;
+namespace SharpCast.Models;
 public class Preferences
 {
     public bool IsSettingsSaved { get; set; }

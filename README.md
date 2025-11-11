@@ -1,4 +1,4 @@
-# JSON to C# POCO Converter
+# Sharp Cast
 
 A simple tool for converting JSON data into C# POCO (Plain Old CLR Object) classes with support for records, customizable property access, nullable types, and various collection types.
 

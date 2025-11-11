@@ -1,7 +1,7 @@
 using System.Text.Json;
-using JsonToCsharpPoco.Models;
+using SharpCast.Models;
 
-namespace JsonToCsharpPoco.Converter;
+namespace SharpCast.Converter;
 
 public class JsonToCSharp
 {

@@ -1,4 +1,4 @@
-using JsonToCsharpPoco.Components.Toast;
+using SharpCast.Components.Toast;
 using System.Threading.Tasks;
 using Xunit;
 

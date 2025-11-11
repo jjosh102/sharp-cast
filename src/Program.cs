@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using JsonToCsharpPoco.Components;
-using JsonToCsharpPoco.Converter;
+using SharpCast.Components;
+using SharpCast.Converter;
 using Blazored.LocalStorage;
-using JsonToCsharpPoco.Shared;
-using JsonToCsharpPoco.Components.Toast;
+using SharpCast.Shared;
+using SharpCast.Components.Toast;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 

@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Humanizer;
 
-namespace JsonToCsharpPoco.Extensions;
+namespace SharpCast.Extensions;
 public static partial class StringHelperExtensions
 {
     [GeneratedRegex("[^a-zA-Z0-9_.-]", RegexOptions.Compiled)]

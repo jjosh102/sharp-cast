@@ -1,4 +1,4 @@
-namespace JsonToCsharpPoco.Models.Enums;
+namespace SharpCast.Models.Enums;
 
 public enum ArrayType
 {

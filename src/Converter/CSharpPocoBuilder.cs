@@ -1,12 +1,12 @@
 using System.Text.Json;
-using JsonToCsharpPoco.Models;
-using JsonToCsharpPoco.Extensions;
-using JsonToCsharpPoco.Models.Enums;
+using SharpCast.Models;
+using SharpCast.Extensions;
+using SharpCast.Models.Enums;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Humanizer;
-namespace JsonToCsharpPoco.Converter;
+namespace SharpCast.Converter;
 
 public partial class CSharpPocoBuilder
 {

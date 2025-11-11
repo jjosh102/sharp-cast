@@ -1,4 +1,4 @@
-﻿namespace JsonToCsharpPoco.Components.Toast;
+﻿namespace SharpCast.Components.Toast;
 
 public class ToastMessage
 {

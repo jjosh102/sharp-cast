@@ -1,4 +1,4 @@
-namespace JsonToCsharpPoco.Shared
+namespace SharpCast.Shared
 {
   public static class Constants
   {

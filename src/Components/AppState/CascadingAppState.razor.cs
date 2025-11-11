@@ -1,12 +1,12 @@
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-using JsonToCsharpPoco.Shared;
+using SharpCast.Shared;
 using Blazored.LocalStorage;
-using JsonToCsharpPoco.Models;
+using SharpCast.Models;
 using BlazorMonaco.Editor;
 
-namespace JsonToCsharpPoco.Components.AppState;
+namespace SharpCast.Components.AppState;
 
 public partial class CascadingAppState : ComponentBase
 {

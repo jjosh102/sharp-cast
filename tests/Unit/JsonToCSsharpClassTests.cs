@@ -1,9 +1,9 @@
-﻿using JsonToCsharpPoco.Models;
-using JsonToCsharpPoco.Models.Enums;
+﻿using SharpCast.Models;
+using SharpCast.Models.Enums;
 
-namespace JsonToCsharpPocoTests;
+namespace SharpCastTests;
 
-using JsonToCsharpPoco.Converter;
+using SharpCast.Converter;
 
 using Xunit;
 

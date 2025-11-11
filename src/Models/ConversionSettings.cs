@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using JsonToCsharpPoco.Models.Enums;
+using SharpCast.Models.Enums;
 
-namespace JsonToCsharpPoco.Models;
+namespace SharpCast.Models;
 public class ConversionSettings : INotifyPropertyChanged
 {
     private bool _useRecords;

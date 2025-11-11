@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace JsonToCsharpPoco.Resources {
+namespace SharpCast.Resources {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace JsonToCsharpPoco.Resources {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("JsonToCsharpPoco.Resources.Localizer", typeof(Localizer).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SharpCast.Resources.Localizer", typeof(Localizer).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

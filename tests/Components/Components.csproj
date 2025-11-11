@@ -32,7 +32,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\src\JsonToCsharpPoco.csproj" />
+	  <ProjectReference Include="..\..\src\SharpCast.csproj" />
 	</ItemGroup>
 
 

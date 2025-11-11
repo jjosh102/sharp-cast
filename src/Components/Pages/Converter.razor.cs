@@ -1,17 +1,17 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Components;
 using BlazorMonaco.Editor;
-using JsonToCsharpPoco.Converter;
+using SharpCast.Converter;
 using Microsoft.JSInterop;
-using JsonToCsharpPoco.Components.AppState;
-using JsonToCsharpPoco.Components.Toast;
-using JsonToCsharpPoco.Models;
+using SharpCast.Components.AppState;
+using SharpCast.Components.Toast;
+using SharpCast.Models;
 using System.ComponentModel;
 using Blazored.LocalStorage;
-using JsonToCsharpPoco.Shared;
-using JsonToCsharpPoco.Resources;
+using SharpCast.Shared;
+using SharpCast.Resources;
 
-namespace JsonToCsharpPoco.Components.Pages;
+namespace SharpCast.Components.Pages;
 
 public partial class Converter : ComponentBase, IDisposable
 {
