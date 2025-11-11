@@ -1,4 +1,4 @@
-namespace JsonToCsharpPoco.Components.Toast;
+namespace JsonToCsharpPoco.Ui.Ui.Components.Toast;
 
 public class ToastService : IDisposable
 {

@@ -1,4 +1,4 @@
-namespace JsonToCsharpPoco.Models.Enums;
+namespace JsonToCsharpPoco.Ui.Models.Enums;
 
 public enum PropertyAccess
 {

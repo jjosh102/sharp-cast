@@ -4,7 +4,7 @@ using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Humanizer;
-namespace JsonToCsharpPoco.Benchmarks;
+namespace JsonToCsharpPoco.Ui.Ui.Benchmarks;
 [MemoryDiagnoser]
 
 public class PascalCaseBenchmark

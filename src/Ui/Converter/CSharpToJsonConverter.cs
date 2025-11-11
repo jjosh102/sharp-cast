@@ -1,12 +1,12 @@
 using System.Text.Json;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-namespace JsonToCsharpPoco.Converter;
+namespace JsonToCsharpPoco.Ui.Ui.Converter;
 
-public class CSharpToJsonConverter : ConverterBase
+public class CSharpToJsonConverter : IConverter
 {
-
     private readonly JsonSerializerOptions _jsonOptions;
 
     public CSharpToJsonConverter(bool indented = true)
@@ -17,7 +17,7 @@ public class CSharpToJsonConverter : ConverterBase
         };
     }
 
-    public override bool TryConvert(string csharpCode, out string json)
+    public bool TryConvert(string csharpCode, out string json)
     {
         try
         {
@@ -88,6 +88,19 @@ public class CSharpToJsonConverter : ConverterBase
                 _ => literal.Token.ValueText
             },
             _ => valueSyntax.ToString()
+        };
+    }
+
+    private object? GetSampleValueForType(string type)
+    {
+        return type switch
+        {
+            "string" => "",
+            "int" or "double" or "float" or "decimal" => 0,
+            "bool" => false,
+            "DateTime" => DateTime.Now,
+            var t when t.StartsWith("IReadOnlyList") || t.StartsWith("List") || t.EndsWith("[]") => Array.Empty<object>(),
+            _ => null
         };
     }
 }

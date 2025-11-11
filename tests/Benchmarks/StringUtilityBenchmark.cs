@@ -4,7 +4,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Running;
 
-namespace JsonToCsharpPoco.Benchmarks;
+namespace JsonToCsharpPoco.Ui.Ui.Benchmarks;
 
 public partial class StringUtilityBenchmark
 {

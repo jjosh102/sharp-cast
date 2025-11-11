@@ -6,7 +6,7 @@ using Blazored.LocalStorage;
 using JsonToCsharpPoco.Models;
 using BlazorMonaco.Editor;
 
-namespace JsonToCsharpPoco.Components.AppState;
+namespace JsonToCsharpPoco.Ui.Ui.Components.AppState;
 
 public partial class CascadingAppState : ComponentBase
 {

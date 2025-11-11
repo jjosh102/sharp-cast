@@ -11,7 +11,7 @@ using Blazored.LocalStorage;
 using JsonToCsharpPoco.Shared;
 using JsonToCsharpPoco.Resources;
 
-namespace JsonToCsharpPoco.Components.Pages;
+namespace JsonToCsharpPoco.Ui.Ui.Components.Pages;
 
 public partial class Converter : ComponentBase, IDisposable
 {

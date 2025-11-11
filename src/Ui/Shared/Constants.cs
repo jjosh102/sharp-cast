@@ -1,4 +1,4 @@
-namespace JsonToCsharpPoco.Shared
+namespace JsonToCsharpPoco.Ui.Ui.Shared
 {
   public static class Constants
   {

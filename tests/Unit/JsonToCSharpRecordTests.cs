@@ -1,7 +1,7 @@
 using JsonToCsharpPoco.Models;
 using JsonToCsharpPoco.Models.Enums;
 
-namespace JsonToCsharpPocoTests;
+namespace JsonToCsharpPoco.UiTests;
 
 using JsonToCsharpPoco.Converter;
 

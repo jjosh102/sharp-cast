@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace JsonToCsharpPoco.Resources {
+namespace JsonToCsharpPoco.Ui.Ui.Resources {
     using System;
     
     

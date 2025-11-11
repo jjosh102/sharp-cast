@@ -1,9 +1,9 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-namespace JsonToCsharpPoco.Converter;
+namespace JsonToCsharpPoco.Ui.Ui.Converter;
 
-public class CSharpToTypeScriptConverter : ConverterBase
+public class CSharpToTypeScriptConverter : IConverter
 {
     private readonly string _rootName;
     private readonly int _indent;
@@ -14,7 +14,7 @@ public class CSharpToTypeScriptConverter : ConverterBase
         _indent = indent;
     }
 
-    public override bool TryConvert(string csharpCode, out string tsCode)
+    public bool TryConvert(string csharpCode, out string tsCode)
     {
         try
         {
@@ -101,6 +101,21 @@ public class CSharpToTypeScriptConverter : ConverterBase
                 _ => literal.Token.ValueText
             },
             _ => expr.ToString()
+        };
+    }
+
+    private string MapCSharpTypeToTypeScript(string csharpType)
+    {
+        return csharpType switch
+        {
+            "string" => "string",
+            "int" or "double" or "float" or "decimal" => "number",
+            "bool" => "boolean",
+            "DateTime" => "Date",
+            var t when t.EndsWith("[]") => MapCSharpTypeToTypeScript(t[..^2]) + "[]",
+            var t when t.StartsWith("IReadOnlyList") || t.StartsWith("List") =>
+                MapCSharpTypeToTypeScript(t[(t.IndexOf('<') + 1)..t.IndexOf('>')]) + "[]",
+            _ => "any"
         };
     }
 }

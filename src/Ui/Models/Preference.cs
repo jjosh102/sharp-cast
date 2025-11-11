@@ -1,4 +1,4 @@
-namespace JsonToCsharpPoco.Models;
+namespace JsonToCsharpPoco.Ui.Models;
 public class Preferences
 {
     public bool IsSettingsSaved { get; set; }

@@ -1,5 +1,5 @@
 
-namespace JsonToCsharpPoco.Converter;
+namespace JsonToCsharpPoco.Ui.Ui.Converter;
 
 public interface IConverter
 {
