@@ -1,19 +1,11 @@
 using System.Text.Json;
 
-<<<<<<<< HEAD:src/SharpCast.ModelConverter/CSharpToJsonConverter.cs
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace SharpCast.ModelConverter;
 
 public class CSharpToJsonConverter : IModelConverter
-========
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-namespace JsonToCsharpPoco.Ui.Ui.Converter;
 
-public class CSharpToJsonConverter : IConverter
->>>>>>>> e004fa85858166851984f373607cbfdc07546e35:src/Ui/Converter/CSharpToJsonConverter.cs
 {
     private readonly JsonSerializerOptions _jsonOptions;
 

@@ -1,24 +1,11 @@
 
 using System.Text.Json;
-<<<<<<<< HEAD:src/SharpCast.ModelConverter/JsonToCSharpConverter.cs
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace SharpCast.ModelConverter;
 
 public class JsonToCSharpConverter : IModelConverter
-========
-using JsonToCsharpPoco.Extensions;
-using JsonToCsharpPoco.Models;
-using JsonToCsharpPoco.Models.Enums;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-namespace JsonToCsharpPoco.Ui.Ui.Converter;
-
-public class JsonToCSharpConverter : IConverter
->>>>>>>> e004fa85858166851984f373607cbfdc07546e35:src/Ui/Converter/JsonToCSharpConverter.cs
 {
     private readonly ConversionOptions _options;
 
@@ -27,11 +14,8 @@ public class JsonToCSharpConverter : IConverter
         _options = options;
     }
 
-<<<<<<<< HEAD:src/SharpCast.ModelConverter/JsonToCSharpConverter.cs
-    public  bool TryConvert(string json, out string csharpCode)
-========
     public bool TryConvert(string json, out string csharpCode)
->>>>>>>> e004fa85858166851984f373607cbfdc07546e35:src/Ui/Converter/JsonToCSharpConverter.cs
+
     {
         try
         {

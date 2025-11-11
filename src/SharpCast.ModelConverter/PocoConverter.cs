@@ -1,22 +1,8 @@
 using System.Text.Json;
-<<<<<<<< HEAD:src/SharpCast.ModelConverter/PocoConverter.cs
-========
-using System.Text.Json.Serialization;
-using JsonToCsharpPoco.Ui.Extensions;
-using JsonToCsharpPoco.Ui.Models;
-using JsonToCsharpPoco.Ui.Models.Enums;
->>>>>>>> e004fa85858166851984f373607cbfdc07546e35:src/Ui/Converter/PocoConverter.cs
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-<<<<<<<< HEAD:src/SharpCast.ModelConverter/PocoConverter.cs
 namespace SharpCast.ModelConverter;
-========
-
-namespace JsonToCsharpPoco.Ui.Ui.Converter;
->>>>>>>> e004fa85858166851984f373607cbfdc07546e35:src/Ui/Converter/PocoConverter.cs
-
 public class PocoConverter
 {
 

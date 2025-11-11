@@ -1,16 +1,10 @@
 
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-<<<<<<<< HEAD:src/SharpCast.ModelConverter/CSharpToTypeScriptConverter.cs
-
 namespace SharpCast.ModelConverter;
 
 public class CSharpToTypeScriptConverter : IModelConverter
-========
-namespace JsonToCsharpPoco.Ui.Ui.Converter;
 
-public class CSharpToTypeScriptConverter : IConverter
->>>>>>>> e004fa85858166851984f373607cbfdc07546e35:src/Ui/Converter/CSharpToTypeScriptConverter.cs
 {
     private readonly string _rootName;
     private readonly int _indent;

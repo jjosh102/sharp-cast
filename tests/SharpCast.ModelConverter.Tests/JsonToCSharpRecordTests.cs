@@ -1,15 +1,7 @@
-namespace SharpCast.UiTests;
 
-<<<<<<< HEAD
 using SharpCast.ModelConverter;
-=======
-namespace JsonToCsharpPoco.UiTests;
-
-using JsonToCsharpPoco.Converter;
->>>>>>> e004fa85858166851984f373607cbfdc07546e35
-
 using Xunit;
-
+namespace SharpCast.ModelConverter.Tests;
 public class JsonToCSharpRecordTests
 {
     private readonly PocoConverter _converter;

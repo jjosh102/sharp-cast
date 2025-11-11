@@ -1,6 +1,6 @@
 using SharpCast.ModelConverter;
 using Xunit;
-
+namespace SharpCast.ModelConverter.Tests;
 public class PascalCaseTests
 {
     [Theory]
