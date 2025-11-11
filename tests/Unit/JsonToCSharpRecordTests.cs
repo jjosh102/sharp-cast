@@ -1,21 +1,18 @@
-using JsonToCsharpPoco.Models;
-using JsonToCsharpPoco.Models.Enums;
+namespace SharpCast.UiTests;
 
-namespace JsonToCsharpPocoTests;
-
-using JsonToCsharpPoco.Converter;
+using SharpCast.ModelConverter;
 
 using Xunit;
 
 public class JsonToCSharpRecordTests
 {
     private readonly PocoConverter _converter;
-    private readonly ConversionSettings _defaultOptions;
+    private readonly ConversionOptions _defaultOptions;
 
     public JsonToCSharpRecordTests()
     {
         _converter = new PocoConverter();
-        _defaultOptions = new ConversionSettings
+        _defaultOptions = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -150,7 +147,7 @@ public class JsonToCSharpRecordTests
             ""456"": 100
         }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -208,7 +205,7 @@ public class JsonToCSharpRecordTests
             ""age"": 30
         }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = false,
@@ -229,7 +226,7 @@ public class JsonToCSharpRecordTests
             ""name"": ""John"",
             ""age"": 30
         }";
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = false,
@@ -250,7 +247,7 @@ public class JsonToCSharpRecordTests
             ""456"": 100
         }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -274,7 +271,7 @@ public class JsonToCSharpRecordTests
             ""456"": 100
         }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -297,7 +294,7 @@ public class JsonToCSharpRecordTests
             ""456"": 100
         }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -321,7 +318,7 @@ public class JsonToCSharpRecordTests
             ""456"": 100
         }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -345,7 +342,7 @@ public class JsonToCSharpRecordTests
         ""email"": """"
     }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = false,
@@ -378,7 +375,7 @@ public class JsonToCSharpRecordTests
         ""email"": """"
     }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             RootTypeName = "RootRecord",
@@ -424,7 +421,7 @@ public class JsonToCSharpRecordTests
         }
     }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             RootTypeName = "RootRecord",
@@ -461,7 +458,7 @@ public class JsonToCSharpRecordTests
         ]
     }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -648,7 +645,7 @@ public class JsonToCSharpRecordTests
         }
     ]";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = false,
@@ -683,7 +680,7 @@ public class JsonToCSharpRecordTests
         }
     ]";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             RootTypeName = "RootRecord",
@@ -730,7 +727,7 @@ public class JsonToCSharpRecordTests
         }
     ]";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             RootTypeName = "RootRecord",
@@ -771,7 +768,7 @@ public class JsonToCSharpRecordTests
         }
     ]";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -806,7 +803,7 @@ public class JsonToCSharpRecordTests
         ""$value"": 99.99
     }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -832,7 +829,7 @@ public class JsonToCSharpRecordTests
         ""last.name"": ""Doe""
     }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -856,7 +853,7 @@ public class JsonToCSharpRecordTests
         ""456-item"": true
     }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -882,7 +879,7 @@ public class JsonToCSharpRecordTests
         }
     }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -907,7 +904,7 @@ public class JsonToCSharpRecordTests
         ""lastName"": ""Doe""
     }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -931,7 +928,7 @@ public class JsonToCSharpRecordTests
         ""special-property"": ""value""
     }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -955,7 +952,7 @@ public class JsonToCSharpRecordTests
         ]
     }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -980,7 +977,7 @@ public class JsonToCSharpRecordTests
         ""namespace"": ""system""
     }";
 
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             Namespace = "TestNamespace",
             UseRecords = true,
@@ -999,7 +996,7 @@ public class JsonToCSharpRecordTests
     [Fact]
     public void ConvertJsonToRecords_FileScopedNamespace_GeneratesCorrectSyntax()
     {
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             UseRecords = true,
             Namespace = "TestNamespace",
@@ -1016,7 +1013,7 @@ public class JsonToCSharpRecordTests
     [Fact]
     public void ConvertJsonToRecord_BlockScopedNamespace_GeneratesCorrectSyntax()
     {
-        var options = new ConversionSettings
+        var options = new ConversionOptions
         {
             UseRecords = true,
             Namespace = "TestNamespace",

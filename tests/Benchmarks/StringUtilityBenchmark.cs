@@ -4,7 +4,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Running;
 
-namespace JsonToCsharpPoco.Benchmarks;
+namespace SharpCast.Ui.Benchmarks;
 
 public partial class StringUtilityBenchmark
 {

@@ -1,4 +1,4 @@
-using JsonToCsharpPoco.Extensions;
+using SharpCast.ModelConverter;
 using Xunit;
 
 public class PascalCaseTests
