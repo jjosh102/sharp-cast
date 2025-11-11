@@ -4,7 +4,11 @@ using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Humanizer;
+<<<<<<< HEAD
 namespace SharpCast.Ui.Benchmarks;
+=======
+namespace JsonToCsharpPoco.Ui.Ui.Benchmarks;
+>>>>>>> e004fa85858166851984f373607cbfdc07546e35
 [MemoryDiagnoser]
 
 public class PascalCaseBenchmark

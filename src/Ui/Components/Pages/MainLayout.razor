@@ -1,0 +1,48 @@
+﻿@inherits LayoutComponentBase
+
+<ToastProvider />
+
+<div class="min-h-screen flex flex-col bg-white dark:bg-[#1E1E1E]">
+    <header
+        class="bg-[#F3F3F3] dark:bg-[#1E1E1E] border-b border-[#E7E7E7] dark:border-[#2D2D2D] py-4 px-4 justify-between">
+        <div class="mx-auto px-2 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-[#007ACC] text-white text-sm font-mono font-semibold py-2 px-4 rounded">
+                    {JSON}
+                </div>
+                <div class="text-gray-800 dark:text-gray-100 text-xl font-bold">→</div>
+                <div class="bg-[#388A34] text-white text-sm font-mono font-semibold py-2 px-4 rounded">
+                    &lt;C#&gt;
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <Settings />
+            </div>
+        </div>
+    </header>
+
+    <main class="grow">
+        <div class="max-w-screen-2xl mx-auto">
+            <ErrorBoundary>
+                <ChildContent>
+                    @Body
+                </ChildContent>
+                <ErrorContent Context="Exception">
+                    <div
+                        class="bg-[#F9F2F4] dark:bg-[#161b22] border border-[#E11] dark:border-[#f85149] text-[#E11] dark:text-[#f85149] px-4 py-3 rounded">
+                        <span class="font-bold">Error Type:</span> @Exception.GetType()
+                        <br />
+                        <span class="font-bold">Message:</span> @Exception.Message
+                    </div>
+                    <p class="text-center text-[#6C6C6C] dark:text-[#8b949e] mt-4">
+                        Nothing to see here right now. Sorry!
+                    </p>
+                </ErrorContent>
+            </ErrorBoundary>
+        </div>
+    </main>
+
+    <footer class="bg-white dark:bg-[#1E1E1E]">
+    </footer>
+</div>
+
