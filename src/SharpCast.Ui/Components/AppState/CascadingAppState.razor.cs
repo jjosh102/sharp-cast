@@ -5,12 +5,8 @@ using SharpCast.Ui.Shared;
 using Blazored.LocalStorage;
 using SharpCast.Ui.Models;
 using BlazorMonaco.Editor;
-
-<<<<<<<< HEAD:src/SharpCast.Ui/Components/AppState/CascadingAppState.razor.cs
 namespace SharpCast.Ui.Components.AppState;
-========
-namespace JsonToCsharpPoco.Ui.Ui.Components.AppState;
->>>>>>>> e004fa85858166851984f373607cbfdc07546e35:src/Ui/Components/AppState/CascadingAppState.razor.cs
+
 
 public partial class CascadingAppState : ComponentBase
 {
@@ -30,7 +26,6 @@ public partial class CascadingAppState : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
-        await InitilizedCustomDarkTheme();
         if (await _localStorageService.GetItemAsync<Preferences>(Constants.SavedPreferences) is { } preferences)
         {
             Preferences = preferences;
@@ -40,7 +35,7 @@ public partial class CascadingAppState : ComponentBase
             string systemTheme = await _jsRuntime.InvokeAsync<string>("getSystemTheme");
             Preferences.CurrentTheme = systemTheme;
         }
-
+        await InitilizedCustomDarkTheme();
         await Global.SetTheme(_jsRuntime, IsDarkTheme ? "github-dark" : "vs-light");
     }
 
