@@ -26,7 +26,6 @@ public partial class CascadingAppState : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
-        await InitilizedCustomDarkTheme();
         if (await _localStorageService.GetItemAsync<Preferences>(Constants.SavedPreferences) is { } preferences)
         {
             Preferences = preferences;
@@ -36,7 +35,7 @@ public partial class CascadingAppState : ComponentBase
             string systemTheme = await _jsRuntime.InvokeAsync<string>("getSystemTheme");
             Preferences.CurrentTheme = systemTheme;
         }
-
+        await InitilizedCustomDarkTheme();
         await Global.SetTheme(_jsRuntime, IsDarkTheme ? "github-dark" : "vs-light");
     }
 
