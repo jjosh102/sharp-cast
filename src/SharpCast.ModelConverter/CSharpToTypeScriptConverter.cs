@@ -3,11 +3,13 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace SharpCast.ModelConverter;
 
-public class CSharpToTypeScriptConverter : IModelConverter
+public class CSharpToTypeScriptConverter : IModelConverter<string>
 
 {
     private readonly string _rootName;
     private readonly int _indent;
+
+    public ModelConverterType Type => ModelConverterType.CSharpToTypescript;
 
     public CSharpToTypeScriptConverter(string rootName = "Root", int indent = 2)
     {
@@ -15,7 +17,7 @@ public class CSharpToTypeScriptConverter : IModelConverter
         _indent = indent;
     }
 
-    public bool TryConvert(string csharpCode, out string tsCode)
+    public bool TryConvert(string csharpCode, string options, out string tsCode)
     {
         try
         {

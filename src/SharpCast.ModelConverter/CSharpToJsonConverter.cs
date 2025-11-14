@@ -4,29 +4,20 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace SharpCast.ModelConverter;
 
-public class CSharpToJsonConverter : IModelConverter
-
+public class CSharpToJsonConverter : IModelConverter<JsonSerializerOptions>
 {
-    private readonly JsonSerializerOptions _jsonOptions;
+    public ModelConverterType Type => ModelConverterType.CSharpToJson;
 
-    public CSharpToJsonConverter(bool indented = true)
-    {
-        _jsonOptions = new JsonSerializerOptions
-        {
-            WriteIndented = indented
-        };
-    }
-
-    public bool TryConvert(string csharpCode, out string json)
+    public bool TryConvert(string csharpCode, JsonSerializerOptions jsonOptions, out string json)
     {
         try
         {
-            json = ConvertCsharpObjectStringToJson(csharpCode);
+            json = ConvertCsharpObjectStringToJson(csharpCode, jsonOptions);
             return true;
         }
         catch (InvalidOperationException)
         {
-            json = ConvertCsharpSourceToJson(csharpCode);
+            json = ConvertCsharpSourceToJson(csharpCode, jsonOptions);
             return true;
         }
         catch (Exception ex)
@@ -36,7 +27,7 @@ public class CSharpToJsonConverter : IModelConverter
         }
     }
 
-    private string ConvertCsharpSourceToJson(string csharpCode)
+    private string ConvertCsharpSourceToJson(string csharpCode, JsonSerializerOptions jsonOptions)
     {
         var tree = CSharpSyntaxTree.ParseText(csharpCode);
         var root = tree.GetRoot();
@@ -56,10 +47,10 @@ public class CSharpToJsonConverter : IModelConverter
             jsonSchema[cls.Identifier.Text] = props;
         }
 
-        return JsonSerializer.Serialize(jsonSchema, _jsonOptions);
+        return JsonSerializer.Serialize(jsonSchema, jsonOptions);
     }
 
-    private string ConvertCsharpObjectStringToJson(string csharpCode)
+    private string ConvertCsharpObjectStringToJson(string csharpCode, JsonSerializerOptions jsonOptions)
     {
         var tree = CSharpSyntaxTree.ParseText(csharpCode);
         var root = tree.GetRoot();
@@ -72,7 +63,7 @@ public class CSharpToJsonConverter : IModelConverter
             var name = initializer.Left.ToString();
             jsonMap[name] = ParseLiteralExpression(initializer.Right);
         }
-        return JsonSerializer.Serialize(jsonMap, _jsonOptions);
+        return JsonSerializer.Serialize(jsonMap, jsonOptions);
     }
 
     private object? ParseLiteralExpression(ExpressionSyntax valueSyntax)

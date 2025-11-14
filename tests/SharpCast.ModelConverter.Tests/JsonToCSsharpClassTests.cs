@@ -3,12 +3,12 @@ using Xunit;
 namespace SharpCast.ModelConverter.Tests;
 public class JsonToCSsharpClassTests
 {
-    private readonly PocoConverter _converter;
+    private readonly JsonToCSharpConverter _converter;
     private readonly ConversionOptions _defaultOptions;
 
     public JsonToCSsharpClassTests()
     {
-        _converter = new PocoConverter();
+        _converter = new();
         _defaultOptions = new ConversionOptions
         {
             Namespace = "TestNamespace",
@@ -26,7 +26,7 @@ public class JsonToCSsharpClassTests
             ""isEmployee"": true
         }";
 
-        _converter.TryConvertJsonToCSharp(json, _defaultOptions, out var result);
+        _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public class RootClass", result);
         Assert.Contains("public string Name", result);
@@ -40,7 +40,7 @@ public class JsonToCSsharpClassTests
 
         string invalidJson = @"{ name: John }";
 
-        _converter.TryConvertJsonToCSharp(invalidJson, _defaultOptions, out var result);
+        _converter.TryConvert(invalidJson, _defaultOptions, out var result);
 
         Assert.StartsWith("Error converting JSON", result);
     }
@@ -50,7 +50,7 @@ public class JsonToCSsharpClassTests
     {
         string emptyJson = "{}";
 
-        _converter.TryConvertJsonToCSharp(emptyJson, _defaultOptions, out var result);
+        _converter.TryConvert(emptyJson, _defaultOptions, out var result);
 
         Assert.Contains("public class RootClass", result);
         Assert.DoesNotContain("public", result.Replace("public class RootClass", ""));
@@ -70,7 +70,7 @@ public class JsonToCSsharpClassTests
             }
         }";
 
-        _converter.TryConvertJsonToCSharp(json, _defaultOptions, out var result);
+        _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public class RootClass", result);
         Assert.Contains("public Person Person", result);
@@ -90,7 +90,7 @@ public class JsonToCSsharpClassTests
             ]
         }";
 
-        _converter.TryConvertJsonToCSharp(json, _defaultOptions, out var result);
+        _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public IReadOnlyList<Items> Items", result);
         Assert.Contains("public class Items", result);
@@ -106,7 +106,7 @@ public class JsonToCSsharpClassTests
             ""data"": [""text"", true, 1]
         }";
 
-        _converter.TryConvertJsonToCSharp(json, _defaultOptions, out var result);
+        _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public IReadOnlyList<object> Data", result);
     }
@@ -127,7 +127,7 @@ public class JsonToCSsharpClassTests
             RootTypeName = "123"
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("public class _123", result);
         Assert.Contains("public string _123", result);
@@ -149,7 +149,7 @@ public class JsonToCSsharpClassTests
             PropertyAccess = PropertyAccess.Mutable
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("public string Name { get; set; }", result);
         Assert.Contains("public int Age { get; set; }", result);
@@ -170,7 +170,7 @@ public class JsonToCSsharpClassTests
             PropertyAccess = PropertyAccess.Immutable
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("public string Name { get; init; }", result);
         Assert.Contains("public int Age { get; init; }", result);
@@ -192,7 +192,7 @@ public class JsonToCSsharpClassTests
 
 
         };
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("[JsonPropertyName(\"123\")]", result);
         Assert.Contains("[JsonPropertyName(\"456\")]", result);
@@ -215,7 +215,7 @@ public class JsonToCSsharpClassTests
 
 
         };
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.DoesNotContain("[JsonPropertyName(\"123\")]", result);
         Assert.DoesNotContain("[JsonPropertyName(\"456\")]", result);
@@ -242,7 +242,7 @@ public class JsonToCSsharpClassTests
             PropertyAccess = PropertyAccess.Immutable
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("public required string? Name { get; init; }", result);
         Assert.Contains("public required int? Age { get; init; }", result);
@@ -250,7 +250,7 @@ public class JsonToCSsharpClassTests
 
 
         options.IsNullable = false;
-        _converter.TryConvertJsonToCSharp(json, options, out var result2);
+        _converter.TryConvert(json, options, out var result2);
         Assert.Contains("public required string Name { get; init; }", result2);
         Assert.Contains("public required int Age { get; init; }", result2);
     }
@@ -279,7 +279,7 @@ public class JsonToCSsharpClassTests
             IsDefaultInitialized = true
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("public class RootClass", result);
         Assert.Contains("public string Name { get; init; } = string.Empty;", result);
@@ -290,7 +290,7 @@ public class JsonToCSsharpClassTests
         Assert.Contains("public string City { get; init; } = string.Empty;", result);
 
         options.IsDefaultInitialized = false;
-        _converter.TryConvertJsonToCSharp(json, options, out var result2);
+        _converter.TryConvert(json, options, out var result2);
 
         Assert.DoesNotContain("= string.Empty", result2);
         Assert.DoesNotContain("= [];", result2);
@@ -315,7 +315,7 @@ public class JsonToCSsharpClassTests
             ArrayType = ArrayType.List
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("public List<Items> Items { get; init; }", result);
         Assert.Contains("public class Items", result);
@@ -323,12 +323,12 @@ public class JsonToCSsharpClassTests
         Assert.Contains("public string Value { get; init; }", result);
 
         options.ArrayType = ArrayType.IReadOnlyList;
-        _converter.TryConvertJsonToCSharp(json, options, out var result2);
+        _converter.TryConvert(json, options, out var result2);
 
         Assert.Contains("public IReadOnlyList<Items> Items { get; init; }", result2);
 
         options.ArrayType = ArrayType.Array;
-        _converter.TryConvertJsonToCSharp(json, options, out var result3);
+        _converter.TryConvert(json, options, out var result3);
 
         Assert.Contains("public Items[] Items { get; init; }", result3);
     }
@@ -341,7 +341,7 @@ public class JsonToCSsharpClassTests
         { ""name"": ""Jane"", ""age"": 25 }
     ]";
 
-        _converter.TryConvertJsonToCSharp(json, _defaultOptions, out var result);
+        _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public class RootClass", result);
         Assert.Contains("public string Name", result);
@@ -352,7 +352,7 @@ public class JsonToCSsharpClassTests
     public void ConvertJsonToClass_EmptyCollection_ThrowsInvalidOperationException()
     {
         string json = "[]";
-        _converter.TryConvertJsonToCSharp(json, _defaultOptions, out var result);
+        _converter.TryConvert(json, _defaultOptions, out var result);
         Assert.NotEmpty(result);
     }
 
@@ -360,7 +360,7 @@ public class JsonToCSsharpClassTests
     public void ConvertJsonToClass_CollectionWithNonObjectFirstElement_ThrowsInvalidOperationException()
     {
         string json = @"[42, ""invalid""]";
-        _converter.TryConvertJsonToCSharp(json, _defaultOptions, out var result);
+        _converter.TryConvert(json, _defaultOptions, out var result);
         Assert.NotEmpty(result);
     }
 
@@ -379,7 +379,7 @@ public class JsonToCSsharpClassTests
         }
     ]";
 
-        _converter.TryConvertJsonToCSharp(json, _defaultOptions, out var result);
+        _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public class RootClass", result);
         Assert.Contains("public Person Person", result);
@@ -402,7 +402,7 @@ public class JsonToCSsharpClassTests
         }
     ]";
 
-        _converter.TryConvertJsonToCSharp(json, _defaultOptions, out var result);
+        _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public class RootClass", result);
         Assert.Contains("public IReadOnlyList<Items> Items", result);
@@ -421,7 +421,7 @@ public class JsonToCSsharpClassTests
         }
     ]";
 
-        _converter.TryConvertJsonToCSharp(json, _defaultOptions, out var result);
+        _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public class RootClass", result);
         Assert.Contains("public DateTime CreatedAt", result);
@@ -452,7 +452,7 @@ public class JsonToCSsharpClassTests
         }
     ]";
 
-        _converter.TryConvertJsonToCSharp(json, _defaultOptions, out var result);
+        _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public class RootClass", result);
         Assert.Contains("public Company Company", result);
@@ -477,7 +477,7 @@ public class JsonToCSsharpClassTests
         }
     ]";
 
-        _converter.TryConvertJsonToCSharp(json, _defaultOptions, out var result);
+        _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public class RootClass", result);
         Assert.Contains("[JsonPropertyName(\"type\")]", result);
@@ -510,14 +510,14 @@ public class JsonToCSsharpClassTests
             PropertyAccess = PropertyAccess.Immutable
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("public required string? Name { get; init; }", result);
         Assert.Contains("public required int? Age { get; init; }", result);
         Assert.Contains("public required string? Email { get; init; }", result);
 
         options.IsNullable = false;
-        _converter.TryConvertJsonToCSharp(json, options, out var result2);
+        _converter.TryConvert(json, options, out var result2);
 
         Assert.Contains("public required string Name { get; init; }", result2);
         Assert.Contains("public required int Age { get; init; }", result2);
@@ -549,7 +549,7 @@ public class JsonToCSsharpClassTests
             IsDefaultInitialized = true
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("public class RootClass", result);
         Assert.Contains("public string Name { get; init; } = string.Empty;", result);
@@ -560,7 +560,7 @@ public class JsonToCSsharpClassTests
         Assert.Contains("public string City { get; init; } = string.Empty;", result);
 
         options.IsDefaultInitialized = false;
-        _converter.TryConvertJsonToCSharp(json, options, out var result2);
+        _converter.TryConvert(json, options, out var result2);
 
         Assert.DoesNotContain("= string.Empty", result2);
         Assert.DoesNotContain("= [];", result2);
@@ -587,7 +587,7 @@ public class JsonToCSsharpClassTests
             ArrayType = ArrayType.List
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("public List<Items> Items { get; init; }", result);
         Assert.Contains("public class Items", result);
@@ -595,12 +595,12 @@ public class JsonToCSsharpClassTests
         Assert.Contains("public string Value { get; init; }", result);
 
         options.ArrayType = ArrayType.IReadOnlyList;
-        _converter.TryConvertJsonToCSharp(json, options, out var result2);
+        _converter.TryConvert(json, options, out var result2);
 
         Assert.Contains("public IReadOnlyList<Items> Items { get; init; }", result2);
 
         options.ArrayType = ArrayType.Array;
-        _converter.TryConvertJsonToCSharp(json, options, out var result3);
+        _converter.TryConvert(json, options, out var result3);
 
         Assert.Contains("public Items[] Items { get; init; }", result3);
     }
@@ -620,7 +620,7 @@ public class JsonToCSsharpClassTests
             AddAttribute = true
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("[JsonPropertyName(\"type\")]", result);
         Assert.Contains("[JsonPropertyName(\"id\")]", result);
@@ -645,7 +645,7 @@ public class JsonToCSsharpClassTests
             AddAttribute = true
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("[JsonPropertyName(\"123\")]", result);
         Assert.Contains("[JsonPropertyName(\"456item\")]", result);
@@ -670,7 +670,7 @@ public class JsonToCSsharpClassTests
             AddAttribute = true
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("[JsonPropertyName(\"email\")]", result);
         Assert.Contains("[JsonPropertyName(\"roles\")]", result);
@@ -693,7 +693,7 @@ public class JsonToCSsharpClassTests
             AddAttribute = true
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("[JsonPropertyName(\"FirstName\")]", result);
         Assert.Contains("[JsonPropertyName(\"lastName\")]", result);
@@ -717,7 +717,7 @@ public class JsonToCSsharpClassTests
             AddAttribute = true
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("[JsonPropertyName(\"item-id\")]", result);
         Assert.Contains("[JsonPropertyName(\"item.value\")]", result);
@@ -740,7 +740,7 @@ public class JsonToCSsharpClassTests
             AddAttribute = true
         };
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("[JsonPropertyName(\"class\")]", result);
         Assert.Contains("[JsonPropertyName(\"namespace\")]", result);
@@ -760,7 +760,7 @@ public class JsonToCSsharpClassTests
 
         string json = "{}";
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("namespace TestNamespace;", result);
     }
@@ -777,7 +777,7 @@ public class JsonToCSsharpClassTests
 
         string json = "{}";
 
-        _converter.TryConvertJsonToCSharp(json, options, out var result);
+        _converter.TryConvert(json, options, out var result);
 
         Assert.Contains("namespace TestNamespace", result);
         Assert.Contains("{", result);

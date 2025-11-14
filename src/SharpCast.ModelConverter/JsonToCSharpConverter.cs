@@ -1,20 +1,17 @@
 
 using System.Text.Json;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace SharpCast.ModelConverter;
 
-public class JsonToCSharpConverter : IModelConverter
+public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
 {
-    private readonly ConversionOptions _options;
 
-    public JsonToCSharpConverter(ConversionOptions options)
-    {
-        _options = options;
-    }
+    public ModelConverterType Type => ModelConverterType.JsonToCSharp;
 
-    public bool TryConvert(string json, out string csharpCode)
+    public bool TryConvert(string json, ConversionOptions options, out string csharpCode)
 
     {
         try
@@ -37,7 +34,7 @@ public class JsonToCSharpConverter : IModelConverter
                 throw new InvalidOperationException("JSON root must be an object or array of objects.");
             }
 
-            csharpCode = BuildFromJson(root, _options);
+            csharpCode = BuildFromJson(root, options);
             return true;
         }
         catch (Exception ex)

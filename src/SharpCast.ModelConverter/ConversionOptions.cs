@@ -1,6 +1,6 @@
 namespace SharpCast.ModelConverter;
 
-public sealed class ConversionOptions
+public sealed class ConversionOptions 
 {
     public bool UseRecords { get; set; }
     public bool UsePrimaryConstructor { get; set; }
