@@ -1,10 +1,11 @@
 using System.Text.Json;
-
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 namespace SharpCast.ModelConverter;
 
-public class CSharpToJsonConverter : IModelConverter<JsonSerializerOptions>
+public sealed class CSharpToJsonConverter : IModelConverter<JsonSerializerOptions>
 {
     public ModelConverterType Type => ModelConverterType.CSharpToJson;
 
@@ -12,12 +13,17 @@ public class CSharpToJsonConverter : IModelConverter<JsonSerializerOptions>
     {
         try
         {
-            json = ConvertCsharpObjectStringToJson(csharpCode, jsonOptions);
-            return true;
-        }
-        catch (InvalidOperationException)
-        {
-            json = ConvertCsharpSourceToJson(csharpCode, jsonOptions);
+            var tree = CSharpSyntaxTree.ParseText(csharpCode);
+            var root = tree.GetRoot();
+
+            var obj = root.DescendantNodes().OfType<ObjectCreationExpressionSyntax>().FirstOrDefault();
+            if (obj != null && obj.Initializer != null)
+            {
+                json = ConvertObjectInitializer(obj, jsonOptions);
+                return true;
+            }
+
+            json = ConvertTypeSchemas(root, jsonOptions);
             return true;
         }
         catch (Exception ex)
@@ -27,70 +33,86 @@ public class CSharpToJsonConverter : IModelConverter<JsonSerializerOptions>
         }
     }
 
-    private string ConvertCsharpSourceToJson(string csharpCode, JsonSerializerOptions jsonOptions)
+    private string ConvertTypeSchemas(SyntaxNode root, JsonSerializerOptions jsonOptions)
     {
-        var tree = CSharpSyntaxTree.ParseText(csharpCode);
-        var root = tree.GetRoot();
-        var classNodes = root.DescendantNodes().OfType<ClassDeclarationSyntax>();
-        var jsonSchema = new Dictionary<string, object?>();
+        var types = root.DescendantNodes()
+            .Where(n =>
+                n is ClassDeclarationSyntax ||
+                n is RecordDeclarationSyntax ||
+                n is StructDeclarationSyntax)
+            .Cast<TypeDeclarationSyntax>();
 
-        foreach (var cls in classNodes)
+        var result = new SortedDictionary<string, object?>();
+
+        foreach (var t in types)
         {
-            var props = new Dictionary<string, object?>();
-            foreach (var prop in cls.Members.OfType<PropertyDeclarationSyntax>())
+            var props = new SortedDictionary<string, object?>();
+
+            foreach (var p in t.Members.OfType<PropertyDeclarationSyntax>())
             {
-                var name = prop.Identifier.Text;
-                var typeName = prop.Type.ToString();
-                props[name] = GetSampleValueForType(typeName);
+                props[p.Identifier.Text] = SampleValue(p.Type);
             }
 
-            jsonSchema[cls.Identifier.Text] = props;
-        }
-
-        return JsonSerializer.Serialize(jsonSchema, jsonOptions);
-    }
-
-    private string ConvertCsharpObjectStringToJson(string csharpCode, JsonSerializerOptions jsonOptions)
-    {
-        var tree = CSharpSyntaxTree.ParseText(csharpCode);
-        var root = tree.GetRoot();
-        var objectCreation = root.DescendantNodes().OfType<ObjectCreationExpressionSyntax>().FirstOrDefault()
-            ?? throw new InvalidOperationException("No object initializer found in the provided code.");
-
-        var jsonMap = new Dictionary<string, object?>();
-        foreach (var initializer in objectCreation.Initializer?.Expressions.OfType<AssignmentExpressionSyntax>() ?? Enumerable.Empty<AssignmentExpressionSyntax>())
-        {
-            var name = initializer.Left.ToString();
-            jsonMap[name] = ParseLiteralExpression(initializer.Right);
-        }
-        return JsonSerializer.Serialize(jsonMap, jsonOptions);
-    }
-
-    private object? ParseLiteralExpression(ExpressionSyntax valueSyntax)
-    {
-        return valueSyntax switch
-        {
-            LiteralExpressionSyntax literal => literal.Kind() switch
+            if (t is RecordDeclarationSyntax r && r.ParameterList != null)
             {
-                SyntaxKind.StringLiteralExpression => literal.Token.ValueText,
-                SyntaxKind.NumericLiteralExpression => literal.Token.Value,
+                foreach (var p in r.ParameterList.Parameters)
+                {
+                    props[p.Identifier.Text] = SampleValue(p.Type);
+                }
+            }
+
+            result[t.Identifier.Text] = props;
+        }
+
+        return JsonSerializer.Serialize(result, jsonOptions);
+    }
+
+    private string ConvertObjectInitializer(ObjectCreationExpressionSyntax obj, JsonSerializerOptions jsonOptions)
+    {
+        var dict = new SortedDictionary<string, object?>();
+
+        foreach (var a in obj.Initializer!.Expressions.OfType<AssignmentExpressionSyntax>())
+        {
+            dict[a.Left.ToString()] = Literal(a.Right);
+        }
+
+        return JsonSerializer.Serialize(dict, jsonOptions);
+    }
+
+    private object? Literal(ExpressionSyntax e)
+    {
+        return e switch
+        {
+            LiteralExpressionSyntax lit => lit.Kind() switch
+            {
+                SyntaxKind.StringLiteralExpression => lit.Token.ValueText,
+                SyntaxKind.NumericLiteralExpression => lit.Token.Value,
                 SyntaxKind.TrueLiteralExpression => true,
                 SyntaxKind.FalseLiteralExpression => false,
-                _ => literal.Token.ValueText
+                _ => throw new InvalidOperationException("Unsupported literal")
             },
-            _ => valueSyntax.ToString()
+
+            PrefixUnaryExpressionSyntax u when u.Operand is LiteralExpressionSyntax lit =>
+                lit.Token.Value is int i ? -i :
+                lit.Token.Value is double d ? -d :
+                throw new InvalidOperationException("Unsupported unary literal"),
+
+            _ => throw new InvalidOperationException("Only pure literals allowed in object initializer")
         };
     }
 
-    private object? GetSampleValueForType(string type)
+    private static object? SampleValue(TypeSyntax? type)
     {
-        return type switch
+        var t = type?.ToString();
+
+        return t switch
         {
             "string" => "",
-            "int" or "double" or "float" or "decimal" => 0,
             "bool" => false,
-            "DateTime" => DateTime.Now,
-            var t when t.StartsWith("IReadOnlyList") || t.StartsWith("List") || t.EndsWith("[]") => Array.Empty<object>(),
+            "int" or "long" or "float" or "double" or "decimal" => 0,
+            "DateTime" => "0001-01-01T00:00:00Z",
+            _ when t.EndsWith("[]") => Array.Empty<object>(),
+            _ when t.StartsWith("List<") || t.StartsWith("IReadOnlyList<") => Array.Empty<object>(),
             _ => null
         };
     }
