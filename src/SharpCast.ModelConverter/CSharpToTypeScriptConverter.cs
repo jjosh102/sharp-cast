@@ -11,8 +11,6 @@ namespace SharpCast.ModelConverter;
 public sealed class CSharpToTypeScriptConverter : IModelConverter<string>
 {
     private readonly int _indent;
-    public ModelConverterType Type => ModelConverterType.CSharpToTypescript;
-
     public CSharpToTypeScriptConverter(int indent = 2)
     {
         _indent = indent;

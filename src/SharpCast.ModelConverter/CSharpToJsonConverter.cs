@@ -7,8 +7,6 @@ namespace SharpCast.ModelConverter;
 
 public sealed class CSharpToJsonConverter : IModelConverter<JsonSerializerOptions>
 {
-    public ModelConverterType Type => ModelConverterType.CSharpToJson;
-
     public bool TryConvert(string csharpCode, JsonSerializerOptions jsonOptions, out string json)
     {
         try
@@ -111,8 +109,8 @@ public sealed class CSharpToJsonConverter : IModelConverter<JsonSerializerOption
             "bool" => false,
             "int" or "long" or "float" or "double" or "decimal" => 0,
             "DateTime" => "0001-01-01T00:00:00Z",
-            _ when t.EndsWith("[]") => Array.Empty<object>(),
-            _ when t.StartsWith("List<") || t.StartsWith("IReadOnlyList<") => Array.Empty<object>(),
+            _ when t is not null && t.EndsWith("[]") => Array.Empty<object>(),
+            _ when t is not null && (t.StartsWith("List<") || t.StartsWith("IReadOnlyList<")) => Array.Empty<object>(),
             _ => null
         };
     }

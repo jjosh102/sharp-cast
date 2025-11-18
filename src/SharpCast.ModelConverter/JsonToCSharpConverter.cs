@@ -8,9 +8,6 @@ namespace SharpCast.ModelConverter;
 
 public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
 {
-
-    public ModelConverterType Type => ModelConverterType.JsonToCSharp;
-
     public bool TryConvert(string json, ConversionOptions options, out string csharpCode)
 
     {

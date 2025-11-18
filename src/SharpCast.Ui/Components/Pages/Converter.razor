@@ -32,16 +32,16 @@
                         <div class="flex items-center justify-between">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.UseRecords_Label</label>
-                            <input type="checkbox" @bind="_conversionSettings.UseRecords"
+                            <input type="checkbox" @bind="_conversionOptions.UseRecords"  @bind:after="OnSettingsChanged"
                                 class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
                         </div>
 
-                        @if (_conversionSettings.UseRecords)
+                        @if (_conversionOptions.UseRecords)
                         {
                             <div class="flex items-center justify-between">
                                 <label
                                     class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.UsePrimaryConstructor_Label</label>
-                                <input type="checkbox" @bind="_conversionSettings.UsePrimaryConstructor"
+                                <input type="checkbox" @bind="_conversionOptions.UsePrimaryConstructor"  @bind:after="OnSettingsChanged"
                                     class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
                             </div>
                         }
@@ -49,7 +49,7 @@
                         <div class="flex items-center justify-between">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.PropertyAccess_Label</label>
-                            <select @bind="_conversionSettings.PropertyAccess"
+                            <select @bind="_conversionOptions.PropertyAccess"  @bind:after="OnSettingsChanged"
                                 class="w-32 px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#1E1E1E] border border-gray-300 dark:border-gray-600 rounded-sm">
                                 @foreach (PropertyAccess access in Enum.GetValues(typeof(PropertyAccess)))
                                 {
@@ -61,7 +61,7 @@
                         <div class="flex items-center justify-between">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.ArrayType_Label</label>
-                            <select @bind="_conversionSettings.ArrayType"
+                            <select @bind="_conversionOptions.ArrayType" @bind:after="OnSettingsChanged"
                                 class="w-32 px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#1E1E1E] border border-gray-300 dark:border-gray-600 rounded-sm">
                                 @foreach (ArrayType arrayType in Enum.GetValues(typeof(ArrayType)))
                                 {
@@ -87,30 +87,30 @@
                         <div class="flex items-center justify-between">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.AddJsonAttribute_Label</label>
-                            <input type="checkbox" @bind="_conversionSettings.AddAttribute"
+                            <input type="checkbox" @bind="_conversionOptions.AddAttribute"  @bind:after="OnSettingsChanged"
                                 class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
                         </div>
-                        @if (!_conversionSettings.IsDefaultInitialized)
+                        @if (!_conversionOptions.IsDefaultInitialized)
                         {
                             <div class="flex items-center justify-between">
                                 <label
                                     class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.IsNullable_Label</label>
-                                <input type="checkbox" @bind="_conversionSettings.IsNullable"
+                                <input type="checkbox" @bind="_conversionOptions.IsNullable" @bind:after="OnSettingsChanged"
                                     class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
                             </div>
                         }
                         <div class="flex items-center justify-between">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.IsRequired_Label</label>
-                            <input type="checkbox" @bind="_conversionSettings.IsRequired"
+                            <input type="checkbox" @bind="_conversionOptions.IsRequired" @bind:after="OnSettingsChanged"
                                 class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
                         </div>
-                        @if (!_conversionSettings.IsNullable)
+                        @if (!_conversionOptions.IsNullable)
                         {
                             <div class="flex items-center justify-between">
                                 <label
                                     class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.DefaultValues_Label</label>
-                                <input type="checkbox" @bind="_conversionSettings.IsDefaultInitialized"
+                                <input type="checkbox" @bind="_conversionOptions.IsDefaultInitialized"  @bind:after="OnSettingsChanged"
                                     class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
                             </div>
                         }
@@ -132,19 +132,19 @@
                         <div class="flex items-center justify-between">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.UseFileScoped_Label</label>
-                            <input type="checkbox" @bind="_conversionSettings.UseFileScoped"
+                            <input type="checkbox" @bind="_conversionOptions.UseFileScoped"
                                 class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
                         </div>
                         <div class="flex flex-col space-y-2">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.Namespace_Label</label>
-                            <input type="text" @bind="_conversionSettings.Namespace"
+                            <input type="text" @bind="_conversionOptions.Namespace"
                                 class="w-full px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#1E1E1E] border border-gray-300 dark:border-gray-600 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-600">
                         </div>
                         <div class="flex flex-col space-y-2">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.RootName_Label</label>
-                            <input type="text" @bind="_conversionSettings.RootTypeName"
+                            <input type="text" @bind="_conversionOptions.RootTypeName"
                                 class="w-full px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#1E1E1E] border border-gray-300 dark:border-gray-600 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-600">
                         </div>
                     </div>
@@ -196,7 +196,7 @@
                         <span>@(_isConverting? Localizer.Converting_Label: Localizer.Convert_Button)</span>
                     </button>
 
-                    <button id="convert-button" type="button" @onclick="ConvertToJson" disabled="@_isConverting"
+                    @* <button id="convert-button" type="button" @onclick="ConvertToJson" disabled="@_isConverting"
                         class="@(_isConverting
                                                                                 ? "relative flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-mono font-semibold rounded-full text-white bg-[#388A34] dark:bg-[#388A34] disabled:opacity-70 disabled:cursor-not-allowed"
                                                                                 : "relative flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-mono font-semibold rounded-full text-white bg-[#007ACC] hover:bg-[#388A34] dark:bg-[#007ACC] dark:hover:bg-[#388A34] disabled:opacity-70 disabled:cursor-not-allowed")">
@@ -212,7 +212,7 @@
                         }
 
                         <span>@(_isConverting? "Converting to Json ...": "Convert to JSON")</span>
-                    </button>
+                    </button> *@
 
                 </div>
 

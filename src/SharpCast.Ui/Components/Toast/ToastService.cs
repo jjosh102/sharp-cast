@@ -1,8 +1,4 @@
-<<<<<<<< HEAD:src/SharpCast.Ui/Components/Toast/ToastService.cs
 namespace SharpCast.Ui.Components.Toast;
-========
-namespace JsonToCsharpPoco.Ui.Ui.Components.Toast;
->>>>>>>> e004fa85858166851984f373607cbfdc07546e35:src/Ui/Components/Toast/ToastService.cs
 
 public class ToastService : IDisposable
 {

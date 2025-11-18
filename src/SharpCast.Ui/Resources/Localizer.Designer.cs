@@ -7,12 +7,8 @@
 //     the code is regenerated.
 // </auto-generated>
 //------------------------------------------------------------------------------
-
-<<<<<<<< HEAD:src/SharpCast.Ui/Resources/Localizer.Designer.cs
 namespace SharpCast.Ui.Resources {
-========
-namespace JsonToCsharpPoco.Ui.Ui.Resources {
->>>>>>>> e004fa85858166851984f373607cbfdc07546e35:src/Ui/Resources/Localizer.Designer.cs
+
     using System;
     
     

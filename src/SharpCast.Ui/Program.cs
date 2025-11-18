@@ -11,7 +11,7 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddLocalization();
-builder.Services.AddSingleton<PocoConverter>();
+builder.Services.AddModelConverters();
 builder.Services.AddSingleton<ToastService>();
 builder.Services.AddBlazoredLocalStorageAsSingleton();
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });

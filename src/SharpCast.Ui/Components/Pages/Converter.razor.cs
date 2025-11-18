@@ -5,27 +5,21 @@ using SharpCast.ModelConverter;
 using Microsoft.JSInterop;
 using SharpCast.Ui.Components.AppState;
 using SharpCast.Ui.Components.Toast;
-using SharpCast.Ui.Models;
-using System.ComponentModel;
 using Blazored.LocalStorage;
 using SharpCast.Ui.Shared;
 using SharpCast.Ui.Resources;
-
-<<<<<<<< HEAD:src/SharpCast.Ui/Components/Pages/Converter.razor.cs
 namespace SharpCast.Ui.Components.Pages;
-========
-namespace JsonToCsharpPoco.Ui.Ui.Components.Pages;
->>>>>>>> e004fa85858166851984f373607cbfdc07546e35:src/Ui/Components/Pages/Converter.razor.cs
 
-public partial class Converter : ComponentBase, IDisposable
+
+public partial class Converter : ComponentBase
 {
-    private readonly PocoConverter _pocoConverter;
+    private readonly IModelConverter<ConversionOptions> _converter;
     private readonly ISyncLocalStorageService _localStorageService;
     private readonly ILocalStorageService _localStorageServiceAsync;
     private readonly IJSRuntime _jsRuntime;
     private readonly ToastService _toastService;
     private bool _showSidebar = true;
-    private ConversionSettings _conversionSettings = new();
+    private ConversionOptions _conversionOptions = new();
 
     [AllowNull] private StandaloneCodeEditor _jsonEditor;
     [AllowNull] private StandaloneCodeEditor _csharpEditor;
@@ -35,13 +29,13 @@ public partial class Converter : ComponentBase, IDisposable
     private bool _isConverting;
 
     public Converter(
-        PocoConverter pocoConverter,
+        IModelConverter<ConversionOptions> converter,
         IJSRuntime jsRuntime,
         ISyncLocalStorageService localStorageService,
         ILocalStorageService localStorageServiceAsync,
         ToastService toastService)
     {
-        _pocoConverter = pocoConverter;
+        _converter = converter;
         _jsRuntime = jsRuntime;
         _localStorageService = localStorageService;
         _localStorageServiceAsync = localStorageServiceAsync;
@@ -53,16 +47,14 @@ public partial class Converter : ComponentBase, IDisposable
         await LoadEditorSettings();
         await LoadEditorContent(Constants.JsonEditorContents, _jsonEditor);
         await LoadEditorContent(Constants.CsharpEditorContents, _csharpEditor);
-
-        _conversionSettings.PropertyChanged += OnConversionSettingsChanged;
     }
 
     private async Task LoadEditorSettings()
     {
-        var savedSettings = await _localStorageServiceAsync.GetItemAsync<ConversionSettings>(Constants.SettingsContents);
+        var savedSettings = await _localStorageServiceAsync.GetItemAsync<ConversionOptions>(Constants.SettingsContents);
         if (savedSettings != null && AppState.Preferences.IsSettingsSaved)
         {
-            _conversionSettings = savedSettings;
+            _conversionOptions = savedSettings;
         }
     }
 
@@ -78,11 +70,11 @@ public partial class Converter : ComponentBase, IDisposable
         }
     }
 
-    private void OnConversionSettingsChanged(object? sender, PropertyChangedEventArgs e)
+    private void OnSettingsChanged()
     {
         if (AppState.Preferences.IsSettingsSaved)
         {
-            _localStorageService.SetItem(Constants.SettingsContents, _conversionSettings);
+            _localStorageService.SetItem(Constants.SettingsContents, _conversionOptions);
         }
     }
 
@@ -108,7 +100,7 @@ public partial class Converter : ComponentBase, IDisposable
     private async Task Convert()
     {
         _isConverting = true;
-        await Task.Delay(500);
+        await Task.Delay(50);
 
         var jsonToConvert = await _jsonEditor.GetValue();
         if (string.IsNullOrWhiteSpace(jsonToConvert))
@@ -118,7 +110,7 @@ public partial class Converter : ComponentBase, IDisposable
             return;
         }
 
-        if (_pocoConverter.TryConvertJsonToCSharp(jsonToConvert, _conversionSettings, out var result))
+        if (_converter.TryConvert(jsonToConvert, _conversionOptions, out var result))
         {
             await _csharpEditor.SetValue(result);
             await ShowToastAsync(Localizer.JsonConversionSuccess, ToastType.Success, Localizer.ConversionSuccess);
@@ -131,31 +123,31 @@ public partial class Converter : ComponentBase, IDisposable
         _isConverting = false;
     }
 
-    private async Task ConvertToJson()
-    {
-        _isConverting = true;
-        await Task.Delay(500);
+    // private async Task ConvertToJson()
+    // {
+    //     _isConverting = true;
+    //     await Task.Delay(500);
 
-        var pocoToConvert = await _csharpEditor.GetValue();
-        if (string.IsNullOrWhiteSpace(pocoToConvert))
-        {
-            await ShowToastAsync(Localizer.EnterJson, ToastType.Error, "Error");
-            _isConverting = false;
-            return;
-        }
+    //     var pocoToConvert = await _csharpEditor.GetValue();
+    //     if (string.IsNullOrWhiteSpace(pocoToConvert))
+    //     {
+    //         await ShowToastAsync(Localizer.EnterJson, ToastType.Error, "Error");
+    //         _isConverting = false;
+    //         return;
+    //     }
 
-        if (_pocoConverter.TryConvertCSharpToTypeScript(pocoToConvert, out var result))
-        {
-            await _jsonEditor.SetValue(result);
-            await ShowToastAsync(Localizer.JsonConversionSuccess, ToastType.Success, Localizer.ConversionSuccess);
-        }
-        else
-        {
-            await ShowToastAsync(Localizer.JsonConversionError, ToastType.Error, $"{Localizer.ConversionFailed} - {result}");
-        }
+    //     if (_pocoConverter.TryConvertCSharpToTypeScript(pocoToConvert, out var result))
+    //     {
+    //         await _jsonEditor.SetValue(result);
+    //         await ShowToastAsync(Localizer.JsonConversionSuccess, ToastType.Success, Localizer.ConversionSuccess);
+    //     }
+    //     else
+    //     {
+    //         await ShowToastAsync(Localizer.JsonConversionError, ToastType.Error, $"{Localizer.ConversionFailed} - {result}");
+    //     }
 
-        _isConverting = false;
-    }
+    //     _isConverting = false;
+    // }
 
     public async Task CopyToClipboard()
     {
@@ -193,7 +185,4 @@ public partial class Converter : ComponentBase, IDisposable
     private async Task OnCsharpDidChangeModelContent(ModelContentChangedEvent eventArgs) =>
       await OnEditorContentChanged(eventArgs, Constants.CsharpEditorContents, _csharpEditor);
 
-
-    public void Dispose() =>
-      _conversionSettings.PropertyChanged -= OnConversionSettingsChanged;
 }
