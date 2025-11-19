@@ -6,7 +6,7 @@ public class CSharpToTypeScriptTests
 
     public CSharpToTypeScriptTests()
     {
-        _converter = new CSharpToTypeScriptConverter(indent: 2);
+        _converter = new CSharpToTypeScriptConverter();
     }
 
     [Fact]
@@ -21,7 +21,7 @@ public class CSharpToTypeScriptTests
             }
         ";
 
-        _converter.TryConvert(code, "", out var ts);
+        _converter.TryConvert(code,  out var ts);
 
         Assert.Contains("export interface Person", ts);
         Assert.Contains("Name: string;", ts);
@@ -36,7 +36,7 @@ public class CSharpToTypeScriptTests
             public record User(string FirstName, int Age);
         ";
 
-        _converter.TryConvert(code, "", out var ts);
+        _converter.TryConvert(code,  out var ts);
 
         Assert.Contains("export interface User", ts);
         Assert.Contains("FirstName: string;", ts);
@@ -54,7 +54,7 @@ public class CSharpToTypeScriptTests
             }
         ";
 
-        _converter.TryConvert(code, "", out var ts);
+        _converter.TryConvert(code,  out var ts);
 
         Assert.Contains("Name?: string;", ts);
         Assert.Contains("Age?: number;", ts);
@@ -70,7 +70,7 @@ public class CSharpToTypeScriptTests
             }
         ";
 
-        _converter.TryConvert(code, "", out var ts);
+        _converter.TryConvert(code,  out var ts);
 
         Assert.Contains("Values: number[];", ts);
     }
@@ -85,7 +85,7 @@ public class CSharpToTypeScriptTests
             }
         ";
 
-        _converter.TryConvert(code, "", out var ts);
+        _converter.TryConvert(code,  out var ts);
 
         Assert.Contains("Tags: string[];", ts);
     }
@@ -105,7 +105,7 @@ public class CSharpToTypeScriptTests
             }
         ";
 
-        _converter.TryConvert(code, "", out var ts);
+        _converter.TryConvert(code,  out var ts);
 
         Assert.Contains("export interface Root", ts);
         Assert.Contains("Person: Person;", ts);
@@ -121,7 +121,7 @@ public class CSharpToTypeScriptTests
             public class B { public string Y { get; set; } }
         ";
 
-        _converter.TryConvert(code, "", out var ts);
+        _converter.TryConvert(code,  out var ts);
 
         Assert.Contains("export interface A", ts);
         Assert.Contains("export interface B", ts);
@@ -154,7 +154,7 @@ public class CSharpToTypeScriptTests
             }
         ";
 
-        _converter.TryConvert(code, "", out var ts);
+        _converter.TryConvert(code,  out var ts);
 
         Assert.Contains("export interface Company", ts);
         Assert.Contains("Departments: Department[];", ts);
@@ -180,7 +180,7 @@ public class CSharpToTypeScriptTests
     //         }
     //     ";
 
-    //     _converter.TryConvert(code, "", out var ts);
+    //     _converter.TryConvert(code,  out var ts);
 
     //     Assert.Contains("class: string;", ts);
     //     Assert.Contains("namespace: string;", ts);
@@ -198,7 +198,7 @@ public class CSharpToTypeScriptTests
     //         }
     //     ";
 
-    //     _converter.TryConvert(code, "", out var ts);
+    //     _converter.TryConvert(code,  out var ts);
 
     //     Assert.Contains("type: string;", ts);
     //     Assert.Contains("id: number;", ts);
@@ -215,7 +215,7 @@ public class CSharpToTypeScriptTests
             }
         ";
 
-        _converter.TryConvert(code, "", out var ts);
+        _converter.TryConvert(code,  out var ts);
 
         Assert.Contains("Value: any;", ts);
     }
@@ -230,7 +230,7 @@ public class CSharpToTypeScriptTests
             }
         ";
 
-        _converter.TryConvert(code, "", out var ts);
+        _converter.TryConvert(code,  out var ts);
 
         Assert.Contains("Data: CustomType;", ts);
     }
@@ -246,7 +246,7 @@ public class CSharpToTypeScriptTests
             }
         ";
 
-        _converter.TryConvert(code, "", out var ts);
+        _converter.TryConvert(code,  out var ts);
 
         Assert.Contains("export interface Point", ts);
         Assert.Contains("X: number;", ts);
@@ -261,7 +261,7 @@ public class CSharpToTypeScriptTests
             public record B(string Name, bool Enabled);
         ";
 
-        _converter.TryConvert(code, "", out var ts);
+        _converter.TryConvert(code,  out var ts);
 
         Assert.Contains("export interface A", ts);
         Assert.Contains("Id: number;", ts);

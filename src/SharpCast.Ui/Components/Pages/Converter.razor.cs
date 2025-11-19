@@ -13,7 +13,8 @@ namespace SharpCast.Ui.Components.Pages;
 
 public partial class Converter : ComponentBase
 {
-    private readonly IModelConverter<ConversionOptions> _converter;
+    private readonly IModelConverter<ConversionOptions> _jsonToCSharpConverter;
+    private readonly IModelConverter _cSharpToTypeScriptConverter;
     private readonly ISyncLocalStorageService _localStorageService;
     private readonly ILocalStorageService _localStorageServiceAsync;
     private readonly IJSRuntime _jsRuntime;
@@ -29,13 +30,15 @@ public partial class Converter : ComponentBase
     private bool _isConverting;
 
     public Converter(
-        IModelConverter<ConversionOptions> converter,
+        IModelConverter<ConversionOptions> jsonToCsharpConverter,
+        IModelConverter cSharpToTypeScriptConverter,
         IJSRuntime jsRuntime,
         ISyncLocalStorageService localStorageService,
         ILocalStorageService localStorageServiceAsync,
         ToastService toastService)
     {
-        _converter = converter;
+        _jsonToCSharpConverter = jsonToCsharpConverter;
+        _cSharpToTypeScriptConverter = cSharpToTypeScriptConverter;
         _jsRuntime = jsRuntime;
         _localStorageService = localStorageService;
         _localStorageServiceAsync = localStorageServiceAsync;
@@ -110,7 +113,7 @@ public partial class Converter : ComponentBase
             return;
         }
 
-        if (_converter.TryConvert(jsonToConvert, _conversionOptions, out var result))
+        if (_jsonToCSharpConverter.TryConvert(jsonToConvert, _conversionOptions, out var result))
         {
             await _csharpEditor.SetValue(result);
             await ShowToastAsync(Localizer.JsonConversionSuccess, ToastType.Success, Localizer.ConversionSuccess);
@@ -123,31 +126,31 @@ public partial class Converter : ComponentBase
         _isConverting = false;
     }
 
-    // private async Task ConvertToJson()
-    // {
-    //     _isConverting = true;
-    //     await Task.Delay(500);
+    private async Task ConvertToTypeScript()
+    {
+        _isConverting = true;
+        await Task.Delay(500);
 
-    //     var pocoToConvert = await _csharpEditor.GetValue();
-    //     if (string.IsNullOrWhiteSpace(pocoToConvert))
-    //     {
-    //         await ShowToastAsync(Localizer.EnterJson, ToastType.Error, "Error");
-    //         _isConverting = false;
-    //         return;
-    //     }
+        var cSharpCode = await _csharpEditor.GetValue();
+        if (string.IsNullOrWhiteSpace(cSharpCode))
+        {
+            await ShowToastAsync(Localizer.EnterJson, ToastType.Error, "Error");
+            _isConverting = false;
+            return;
+        }
 
-    //     if (_pocoConverter.TryConvertCSharpToTypeScript(pocoToConvert, out var result))
-    //     {
-    //         await _jsonEditor.SetValue(result);
-    //         await ShowToastAsync(Localizer.JsonConversionSuccess, ToastType.Success, Localizer.ConversionSuccess);
-    //     }
-    //     else
-    //     {
-    //         await ShowToastAsync(Localizer.JsonConversionError, ToastType.Error, $"{Localizer.ConversionFailed} - {result}");
-    //     }
+        if (_cSharpToTypeScriptConverter.TryConvert(cSharpCode, out var result))
+        {
+            await _jsonEditor.SetValue(result);
+            await ShowToastAsync(Localizer.JsonConversionSuccess, ToastType.Success, Localizer.ConversionSuccess);
+        }
+        else
+        {
+            await ShowToastAsync(Localizer.JsonConversionError, ToastType.Error, $"{Localizer.ConversionFailed} - {result}");
+        }
 
-    //     _isConverting = false;
-    // }
+        _isConverting = false;
+    }
 
     public async Task CopyToClipboard()
     {

@@ -196,7 +196,7 @@
                         <span>@(_isConverting? Localizer.Converting_Label: Localizer.Convert_Button)</span>
                     </button>
 
-                    @* <button id="convert-button" type="button" @onclick="ConvertToJson" disabled="@_isConverting"
+                    <button id="convert-button" type="button" @onclick="ConvertToTypeScript" disabled="@_isConverting"
                         class="@(_isConverting
                                                                                 ? "relative flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-mono font-semibold rounded-full text-white bg-[#388A34] dark:bg-[#388A34] disabled:opacity-70 disabled:cursor-not-allowed"
                                                                                 : "relative flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-mono font-semibold rounded-full text-white bg-[#007ACC] hover:bg-[#388A34] dark:bg-[#007ACC] dark:hover:bg-[#388A34] disabled:opacity-70 disabled:cursor-not-allowed")">
@@ -212,7 +212,7 @@
                         }
 
                         <span>@(_isConverting? "Converting to Json ...": "Convert to JSON")</span>
-                    </button> *@
+                    </button>
 
                 </div>
 

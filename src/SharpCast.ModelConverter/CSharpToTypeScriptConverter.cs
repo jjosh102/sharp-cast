@@ -8,15 +8,10 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SharpCast.ModelConverter;
 
-public sealed class CSharpToTypeScriptConverter : IModelConverter<string>
+public sealed class CSharpToTypeScriptConverter : IModelConverter
 {
-    private readonly int _indent;
-    public CSharpToTypeScriptConverter(int indent = 2)
-    {
-        _indent = indent;
-    }
-
-    public bool TryConvert(string csharpCode, string options, out string tsCode)
+    private const int IndentSize = 2;
+    public bool TryConvert(string csharpCode, out string tsCode)
     {
         try
         {
@@ -107,7 +102,7 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter<string>
 
     private void EmitMember(StringBuilder sb, string propName, string tsType, bool optional)
     {
-        sb.Append(' ', _indent);
+        sb.Append(' ', IndentSize);
         if (IsValidTsIdentifier(propName))
         {
             sb.Append(propName);

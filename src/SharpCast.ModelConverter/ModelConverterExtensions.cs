@@ -10,7 +10,7 @@ public static class ModelConverterExtensions
     {
         services.AddSingleton<IModelConverter<ConversionOptions>, JsonToCSharpConverter>();
         services.AddSingleton<IModelConverter<JsonSerializerOptions>, CSharpToJsonConverter>();
-        services.AddSingleton<IModelConverter<string>, CSharpToTypeScriptConverter>();
+        services.AddSingleton<IModelConverter, CSharpToTypeScriptConverter>();
         return services;
     }
 }
