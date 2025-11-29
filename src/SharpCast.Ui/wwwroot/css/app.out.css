@@ -507,6 +507,9 @@
   .border-gray-600 {
     border-color: var(--color-gray-600);
   }
+  .bg-\[\#1a1d22\] {
+    background-color: #1a1d22;
+  }
   .bg-\[\#1e1e1e\] {
     background-color: #1e1e1e;
   }
@@ -1032,6 +1035,11 @@
       background-color: #1E1E1E;
     }
   }
+  .dark\:bg-\[\#1a1d22\] {
+    &:where(.dark, .dark *) {
+      background-color: #1a1d22;
+    }
+  }
   .dark\:bg-\[\#2D2D2D\] {
     &:where(.dark, .dark *) {
       background-color: #2D2D2D;
@@ -1055,6 +1063,16 @@
   .dark\:bg-\[\#388A34\] {
     &:where(.dark, .dark *) {
       background-color: #388A34;
+    }
+  }
+  .dark\:bg-\[\#010409\] {
+    &:where(.dark, .dark *) {
+      background-color: #010409;
+    }
+  }
+  .dark\:bg-\[\#34363a\] {
+    &:where(.dark, .dark *) {
+      background-color: #34363a;
     }
   }
   .dark\:bg-black\/70 {

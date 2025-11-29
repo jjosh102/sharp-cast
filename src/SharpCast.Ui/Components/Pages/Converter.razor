@@ -1,15 +1,15 @@
 ﻿@page "/"
 
-<div class="flex flex-col lg:flex-row min-h-screen bg-white dark:bg-[#1E1E1E]">
+<div class="flex flex-col lg:flex-row min-h-screen ]">
     <div class="@($"fixed inset-0 z-40 backdrop-blur-sm bg-black/30 transition-opacity lg:hidden {(_showSidebar ? "block" : "hidden")}")"
         @onclick="() => _showSidebar = false">
     </div>
 
     <aside
-        class="@($"fixed lg:static z-50 lg:z-10 top-0 left-0 w-72 h-full bg-white dark:bg-[#1E1E1E] transform transition-transform duration-300 ease-in-out {(_showSidebar ? "translate-x-0" : "-translate-x-full")} lg:translate-x-0")">
+        class="@($"fixed lg:static z-50 lg:z-10 top-0 left-0 w-72 h-full ] transform transition-transform duration-300 ease-in-out {(_showSidebar ? "translate-x-0" : "-translate-x-full")} lg:translate-x-0")">
 
         <div
-            class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-[#2D2D2D] lg:hidden">
+            class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:bg-[#34363a] lg:hidden">
             <h2 class="text-base font-semibold text-gray-800 dark:text-white">@Localizer.Settings_Title</h2>
             <button class="text-sm text-blue-600" @onclick="() => _showSidebar = false">✕</button>
         </div>
@@ -18,7 +18,7 @@
 
             <div class="space-y-3">
                 <details
-                    class="group bg-gray-100 dark:bg-[#1E1E1E] rounded-lg border border-gray-200 dark:border-[#2D2D2D]"
+                    class="group bg-gray-100 dark:bg-[#34363a] rounded-lg border border-gray-200 "
                     open>
                     <summary
                         class="cursor-pointer px-4 py-2 text-sm font-bold text-gray-800 dark:text-gray-100 flex justify-between items-center">
@@ -28,7 +28,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </summary>
-                    <div class="p-4 space-y-3 border-t border-gray-200 dark:border-[#2D2D2D]">
+                    <div class="p-4 space-y-3 border-t border-gray-200">
                         <div class="flex items-center justify-between">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.UseRecords_Label</label>
@@ -50,7 +50,7 @@
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.PropertyAccess_Label</label>
                             <select @bind="_conversionOptions.PropertyAccess"  @bind:after="OnSettingsChanged"
-                                class="w-32 px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#1E1E1E] border border-gray-300 dark:border-gray-600 rounded-sm">
+                                class="w-32 px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#34363a] border border-gray-300 dark:border-gray-600 rounded-sm">
                                 @foreach (PropertyAccess access in Enum.GetValues(typeof(PropertyAccess)))
                                 {
                                     <option value="@access">@access</option>
@@ -62,7 +62,7 @@
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.ArrayType_Label</label>
                             <select @bind="_conversionOptions.ArrayType" @bind:after="OnSettingsChanged"
-                                class="w-32 px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#1E1E1E] border border-gray-300 dark:border-gray-600 rounded-sm">
+                                class="w-32 px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#34363a] border border-gray-300 dark:border-gray-600 rounded-sm">
                                 @foreach (ArrayType arrayType in Enum.GetValues(typeof(ArrayType)))
                                 {
                                     <option value="@arrayType">@arrayType</option>
@@ -73,7 +73,7 @@
                 </details>
 
                 <details
-                    class="group bg-gray-100 dark:bg-[#1E1E1E] rounded-lg border border-gray-200 dark:border-[#2D2D2D]"
+                    class="group bg-gray-100 dark:bg-[#34363a] rounded-lg border border-gray-200"
                     open>
                     <summary
                         class="cursor-pointer px-4 py-2 text-sm font-bold text-gray-800 dark:text-gray-100 flex justify-between items-center">
@@ -83,7 +83,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </summary>
-                    <div class="p-4 space-y-3 border-t border-gray-200 dark:border-[#2D2D2D]">
+                    <div class="p-4 space-y-3 border-t border-gray-200 ">
                         <div class="flex items-center justify-between">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.AddJsonAttribute_Label</label>
@@ -118,7 +118,7 @@
                 </details>
 
                 <details
-                    class="group bg-gray-100 dark:bg-[#1E1E1E] rounded-lg border border-gray-200 dark:border-[#2D2D2D]"
+                    class="group bg-gray-100 dark:bg-[#34363a] rounded-lg border border-gray-200"
                     open>
                     <summary
                         class="cursor-pointer px-4 py-2 text-sm font-bold text-gray-800 dark:text-gray-100 flex justify-between items-center">
@@ -128,7 +128,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </summary>
-                    <div class="p-4 space-y-3 border-t border-gray-200 dark:border-[#2D2D2D]">
+                    <div class="p-4 space-y-3 border-t border-gray-200">
                         <div class="flex items-center justify-between">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.UseFileScoped_Label</label>
@@ -139,13 +139,13 @@
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.Namespace_Label</label>
                             <input type="text" @bind="_conversionOptions.Namespace"
-                                class="w-full px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#1E1E1E] border border-gray-300 dark:border-gray-600 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-600">
+                                class="w-full px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#34363a] border border-gray-300 dark:border-gray-600 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-600">
                         </div>
                         <div class="flex flex-col space-y-2">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.RootName_Label</label>
                             <input type="text" @bind="_conversionOptions.RootTypeName"
-                                class="w-full px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#1E1E1E] border border-gray-300 dark:border-gray-600 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-600">
+                                class="w-full px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#34363a] border border-gray-300 dark:border-gray-600 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-600">
                         </div>
                     </div>
                 </details>
@@ -156,7 +156,7 @@
     <div class="flex-1 flex flex-col">
 
         <header
-            class="lg:hidden flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-[#2D2D2D] bg-white dark:bg-[#1E1E1E] sticky top-0 z-30">
+            class="lg:hidden flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:bg-[#34363a] ] sticky top-0 z-30">
             <h1 class="text-base font-semibold text-gray-900 dark:text-white">@Localizer.Settings_Title</h1>
             <button class="text-sm font-semibold text-blue-600" @onclick="() => _showSidebar = true">☰</button>
         </header>
@@ -225,7 +225,7 @@
                     <StandaloneCodeEditor @ref="_jsonEditor" Id="json-editor"
                         OnDidChangeModelContent="OnJsonDidChangeModelContent"
                         ConstructionOptions="@((editor) => CreateEditorOptions("json"))"
-                        CssClass="flex-1 h-[50vh] lg:h-[calc(100vh-12rem)] rounded-sm border border-gray-300 dark:border-[#2D2D2D]" />
+                        CssClass="flex-1 h-[50vh] lg:h-[calc(100vh-12rem)] rounded-sm border border-gray-300 dark:bg-[#34363a]" />
                 </div>
                 <div class="w-full lg:w-1/2 flex flex-col">
                     <label
@@ -233,7 +233,7 @@
                     <StandaloneCodeEditor @ref="_csharpEditor" Id="csharp-editor"
                         OnDidChangeModelContent="OnCsharpDidChangeModelContent"
                         ConstructionOptions="@((editor) => CreateEditorOptions("csharp"))"
-                        CssClass="flex-1 h-[50vh] lg:h-[calc(100vh-12rem)] rounded-sm border border-gray-300 dark:border-[#2D2D2D]" />
+                        CssClass="flex-1 h-[50vh] lg:h-[calc(100vh-12rem)] rounded-sm border border-gray-300 dark:bg-[#34363a]" />
                 </div>
             </div>
         </main>
