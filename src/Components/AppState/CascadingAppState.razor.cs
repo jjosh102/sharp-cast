@@ -63,7 +63,7 @@ public partial class CascadingAppState : ComponentBase
             Inherit = true,
             Rules =
             [
-            new() { Foreground = "c9d1d9" },
+            new() {},
             ],
             Colors = new Dictionary<string, string>
             {
