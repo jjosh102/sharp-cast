@@ -1,6 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using SharpCast.Ui.Benchmarks;
+namespace Benchmarks;
 
 [InProcessAttribute]
 public class RunBenchmarks

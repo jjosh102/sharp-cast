@@ -243,7 +243,7 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
             return ("any", false);
 
         var text = typeSyntax.ToString().Trim();
-        if (text.Contains("<") || text.Contains(">"))
+        if (text.Contains('<') || text.Contains('>'))
             return ("any", false);
 
         return (text, false);
@@ -254,8 +254,7 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
         if (typeSyntax == null) return false;
         if (typeSyntax is NullableTypeSyntax) return true;
         var txt = typeSyntax.ToString().Trim();
-        if (txt.EndsWith("?")) return true;
-        return false;
+        return txt.EndsWith('?');
     }
 
     private static string MapKnownSimpleType(string token)

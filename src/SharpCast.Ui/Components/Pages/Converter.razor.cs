@@ -129,6 +129,8 @@ public partial class Converter : ComponentBase
     private async Task ConvertToTypeScript()
     {
         _isConverting = true;
+        var model = await _jsonEditor.GetModel();
+        await Global.SetModelLanguage(_jsRuntime, model, "typescript");
         await Task.Delay(500);
 
         var cSharpCode = await _csharpEditor.GetValue();
