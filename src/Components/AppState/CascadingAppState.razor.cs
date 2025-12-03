@@ -63,14 +63,7 @@ public partial class CascadingAppState : ComponentBase
             Inherit = true,
             Rules =
             [
-            new() { Token = string.Empty, Foreground = "c9d1d9", Background = "0d1117" },
-            new() { Token = "comment", Foreground = "8b949e" },
-            new() { Token = "keyword", Foreground = "ff7b72" },
-            new() { Token = "number", Foreground = "79c0ff" },
-            new() { Token = "string", Foreground = "a5d6ff" },
-            new() { Token = "delimiter", Foreground = "e1e4e8" },
-            new() { Token = "type", Foreground = "ffa657" },
-            new() { Token = "function", Foreground = "d2a8ff" }
+            new() { Foreground = "c9d1d9" },
             ],
             Colors = new Dictionary<string, string>
             {
