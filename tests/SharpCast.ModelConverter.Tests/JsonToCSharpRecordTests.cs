@@ -864,7 +864,7 @@ public class JsonToCSharpRecordTests
         Assert.Contains("[property: JsonPropertyName(\"123\")]", result);
         Assert.Contains("[property: JsonPropertyName(\"456-item\")]", result);
         Assert.Contains("string _123", result);
-        Assert.Contains("bool 456Item", result);
+        Assert.Contains("bool _456Item", result);
     }
 
     [Fact]

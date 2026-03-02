@@ -1,4 +1,3 @@
-
 namespace SharpCast.Ui.Shared;
 
 public static class Constants
@@ -6,6 +5,8 @@ public static class Constants
     public const string SavedPreferences = "saved-Preferences";
     public const string JsonEditorContents = "json-editor-contents";
     public const string CsharpEditorContents = "csharp-editor-contents";
+    public const string InputEditorContents = "input-editor-contents";
+    public const string LastConversionOutput = "last-conversion-output";
     public const string SettingsContents = "settings-contents";
     public const string PreferredCulture = " preferred-culture";
 

@@ -270,4 +270,49 @@ public class CSharpToTypeScriptTests
         Assert.Contains("Name: string;", ts);
         Assert.Contains("Enabled: boolean;", ts);
     }
+
+    [Fact]
+    public void Convert_QualifiedListType_MapsToArray()
+    {
+        string code = @"
+            public class Data
+            {
+                public System.Collections.Generic.List<string> Tags { get; set; }
+            }
+        ";
+
+        _converter.TryConvert(code, out var ts);
+
+        Assert.Contains("Tags: string[];", ts);
+    }
+
+    [Fact]
+    public void Convert_NullableGenericType_MapsToOptional()
+    {
+        string code = @"
+            public class Data
+            {
+                public Nullable<int> Score { get; set; }
+            }
+        ";
+
+        _converter.TryConvert(code, out var ts);
+
+        Assert.Contains("Score?: number;", ts);
+    }
+
+    [Fact]
+    public void Convert_UnknownGenericWrapper_MapsToAny()
+    {
+        string code = @"
+            public class Data
+            {
+                public Wrapper<int> Payload { get; set; }
+            }
+        ";
+
+        _converter.TryConvert(code, out var ts);
+
+        Assert.Contains("Payload: any;", ts);
+    }
 }

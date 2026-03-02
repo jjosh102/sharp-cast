@@ -223,11 +223,10 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
                 return ($"Record<string, {valueType}>", false);
             }
 
-
-            if (args.Count == 1)
+            if (identifier.Equals("Nullable", StringComparison.Ordinal) && args.Count == 1)
             {
                 var inner = MapTypeSyntax(args[0], parentTypeParameters).TsType;
-                return ($"{inner}[]", false);
+                return (inner, true);
             }
 
             return ("any", false);
@@ -235,8 +234,7 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
 
         if (typeSyntax is QualifiedNameSyntax qn)
         {
-            var right = qn.Right.ToString();
-            return (MapKnownSimpleType(right), false);
+            return MapTypeSyntax(qn.Right, parentTypeParameters);
         }
 
         if (typeSyntax is TupleTypeSyntax)

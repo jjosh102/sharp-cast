@@ -20,7 +20,7 @@ public class PascalCaseTests
     [InlineData("a", "A")]
     [InlineData("A", "A")]
     [InlineData("1", "_1")]
-    [InlineData("1_test_case", "1TestCase")]
+    [InlineData("1_test_case", "_1TestCase")]
     public void ToPascalCase_EdgeCases(string input, string expected)
     {
         var result = input.ToPascalCase();
@@ -68,8 +68,8 @@ public class PascalCaseTests
     }
 
     [Theory]
-    [InlineData("123_test_case", "123TestCase")]
-    [InlineData("456_example_case", "456ExampleCase")]
+    [InlineData("123_test_case", "_123TestCase")]
+    [InlineData("456_example_case", "_456ExampleCase")]
     public void ToPascalCase_WithNumberAtStart(string input, string expected)
     {
         var result = input.ToPascalCase();
@@ -80,7 +80,7 @@ public class PascalCaseTests
     [InlineData("strange_combination_of_words_and_symbols@#!", "StrangeCombinationOfWordsAndSymbols")]
     [InlineData("mixed_Casing_and_underscores_and-hyphens", "MixedCasingAndUnderscoresAndHyphens")]
     [InlineData("_weird_start_and_end_", "WeirdStartAndEnd")]
-    [InlineData("123_abc_!@#_def", "123AbcDef")]
+    [InlineData("123_abc_!@#_def", "_123AbcDef")]
     [InlineData("CAPITAL_LETTERS_WITH_UNDERSCORES", "CapitalLettersWithUnderscores")]
     public void ToPascalCase_StrangeWordCombinations(string input, string expected)
     {

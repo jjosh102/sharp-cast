@@ -1,30 +1,63 @@
 ﻿@page "/"
 
-<div class="flex flex-col lg:flex-row min-h-screen ]">
-    <div class="@($"fixed inset-0 z-40 backdrop-blur-sm bg-black/30 transition-opacity lg:hidden {(_showSidebar ? "block" : "hidden")}")"
-        @onclick="() => _showSidebar = false">
-    </div>
+<div class="flex h-[calc(100dvh-88px)] min-h-[540px] w-full overflow-hidden border border-[#E7E7E7] dark:border-[#30363d] bg-[#fcfcfd] dark:bg-[#0d1117] lg:rounded-lg">
+    @if (_showSidebar)
+    {
+        <div class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" @onclick="() => _showSidebar = false"></div>
+    }
 
     <aside
-        class="@($"fixed lg:static z-50 lg:z-10 top-0 left-0 w-72 h-full ] transform transition-transform duration-300 ease-in-out {(_showSidebar ? "translate-x-0" : "-translate-x-full")} lg:translate-x-0")">
+        class="@($"fixed lg:static z-50 lg:z-10 top-0 left-0 w-[21rem] h-full border-r border-[#E7E7E7] dark:border-[#30363d] bg-[#F9F9F9] dark:bg-[#161b22] flex flex-col transform transition-transform duration-300 ease-in-out {(_showSidebar ? "translate-x-0" : "-translate-x-full")} lg:translate-x-0")">
 
         <div
-            class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:bg-[#34363a] lg:hidden">
-            <h2 class="text-base font-semibold text-gray-800 dark:text-white">@Localizer.Settings_Title</h2>
-            <button class="text-sm text-blue-600" @onclick="() => _showSidebar = false">✕</button>
+            class="flex items-center justify-between px-4 h-12 border-b border-[#E7E7E7] dark:border-[#30363d] bg-gray-50 dark:bg-[#21262d] shrink-0">
+            <h2 class="text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                @Localizer.Settings_Title
+            </h2>
+            <button class="lg:hidden text-gray-400 hover:text-red-500" @onclick="() => _showSidebar = false">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
         </div>
 
-        <div class="overflow-y-auto h-full p-4 space-y-4">
+        <div class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+            <div class="rounded border border-gray-200 dark:border-[#30363d] bg-white dark:bg-[#0d1117] p-3">
+                <div class="text-[10px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">@Localizer.ResourceManager.GetString("ConversionRoute_Label", Localizer.Culture)</div>
+                <div class="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <select value="@_inputFormat" @onchange="OnInputFormatChanged"
+                            class="px-2 py-1 text-[11px] font-bold bg-gray-50 dark:bg-[#0d1117] border dark:border-[#30363d] rounded dark:text-white">
+                        @foreach (var format in Enum.GetValues<CodeFormat>())
+                        {
+                            <option value="@format">@format</option>
+                        }
+                    </select>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    <select value="@_outputFormat" @onchange="OnOutputFormatChanged"
+                            class="px-2 py-1 text-[11px] font-bold bg-gray-50 dark:bg-[#0d1117] border dark:border-[#30363d] rounded dark:text-white">
+                        @foreach (var format in Enum.GetValues<CodeFormat>())
+                        {
+                            <option value="@format">@format</option>
+                        }
+                    </select>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(CurrentRouteMessage))
+                {
+                    <div class="mt-2 text-[10px] text-amber-600 dark:text-amber-400">@CurrentRouteMessage</div>
+                }
+            </div>
 
-            <div class="space-y-3">
-                <details
-                    class="group bg-gray-100 dark:bg-[#34363a] rounded-lg border border-gray-200 "
-                    open>
+            @if (ShowModelGenerationSettings)
+            {
+                <details class="group rounded border border-gray-200 dark:border-[#30363d] bg-white dark:bg-[#0d1117]" open>
                     <summary
                         class="cursor-pointer px-4 py-2 text-sm font-bold text-gray-800 dark:text-gray-100 flex justify-between items-center">
                         <span>@Localizer.TypeSettings_Title</span>
-                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor"
+                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </summary>
@@ -32,8 +65,8 @@
                         <div class="flex items-center justify-between">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.UseRecords_Label</label>
-                            <input type="checkbox" @bind="_conversionOptions.UseRecords"  @bind:after="OnSettingsChanged"
-                                class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
+                            <input type="checkbox" @bind="_conversionOptions.UseRecords" @bind:after="OnSettingsChanged"
+                                   class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
                         </div>
 
                         @if (_conversionOptions.UseRecords)
@@ -41,16 +74,17 @@
                             <div class="flex items-center justify-between">
                                 <label
                                     class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.UsePrimaryConstructor_Label</label>
-                                <input type="checkbox" @bind="_conversionOptions.UsePrimaryConstructor"  @bind:after="OnSettingsChanged"
-                                    class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
+                                <input type="checkbox" @bind="_conversionOptions.UsePrimaryConstructor"
+                                       @bind:after="OnSettingsChanged"
+                                       class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
                             </div>
                         }
 
                         <div class="flex items-center justify-between">
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.PropertyAccess_Label</label>
-                            <select @bind="_conversionOptions.PropertyAccess"  @bind:after="OnSettingsChanged"
-                                class="w-32 px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#34363a] border border-gray-300 dark:border-gray-600 rounded-sm">
+                            <select @bind="_conversionOptions.PropertyAccess" @bind:after="OnSettingsChanged"
+                                    class="w-32 px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#34363a] border border-gray-300 dark:border-gray-600 rounded-sm">
                                 @foreach (PropertyAccess access in Enum.GetValues(typeof(PropertyAccess)))
                                 {
                                     <option value="@access">@access</option>
@@ -62,7 +96,7 @@
                             <label
                                 class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.ArrayType_Label</label>
                             <select @bind="_conversionOptions.ArrayType" @bind:after="OnSettingsChanged"
-                                class="w-32 px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#34363a] border border-gray-300 dark:border-gray-600 rounded-sm">
+                                    class="w-32 px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#34363a] border border-gray-300 dark:border-gray-600 rounded-sm">
                                 @foreach (ArrayType arrayType in Enum.GetValues(typeof(ArrayType)))
                                 {
                                     <option value="@arrayType">@arrayType</option>
@@ -72,170 +106,163 @@
                     </div>
                 </details>
 
-                <details
-                    class="group bg-gray-100 dark:bg-[#34363a] rounded-lg border border-gray-200"
-                    open>
+                <details class="group rounded border border-gray-200 dark:border-[#30363d] bg-white dark:bg-[#0d1117]" open>
                     <summary
-                        class="cursor-pointer px-4 py-2 text-sm font-bold text-gray-800 dark:text-gray-100 flex justify-between items-center">
+                        class="cursor-pointer px-3 py-2 text-xs font-bold text-gray-700 dark:text-gray-200 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-[#161b22]">
                         <span>@Localizer.PropertySettings_Title</span>
-                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        <svg class="w-3 h-3 transition-transform group-open:rotate-180 opacity-50" fill="none"
+                             stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7" />
                         </svg>
                     </summary>
-                    <div class="p-4 space-y-3 border-t border-gray-200 ">
-                        <div class="flex items-center justify-between">
-                            <label
-                                class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.AddJsonAttribute_Label</label>
-                            <input type="checkbox" @bind="_conversionOptions.AddAttribute"  @bind:after="OnSettingsChanged"
-                                class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
+                    <div
+                        class="p-3 space-y-3 border-t border-gray-200 dark:border-[#30363d] text-[11px] dark:text-gray-300">
+                        <div class="flex justify-between items-center">
+                            <label>@Localizer.AddJsonAttribute_Label</label>
+                            <input type="checkbox" @bind="_conversionOptions.AddAttribute" @bind:after="OnSettingsChanged"
+                                   class="rounded" />
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <label>@Localizer.IsRequired_Label</label>
+                            <input type="checkbox" @bind="_conversionOptions.IsRequired" @bind:after="OnSettingsChanged"
+                                   class="rounded" />
                         </div>
                         @if (!_conversionOptions.IsDefaultInitialized)
                         {
-                            <div class="flex items-center justify-between">
-                                <label
-                                    class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.IsNullable_Label</label>
+                            <div class="flex justify-between items-center">
+                                <label>@Localizer.IsNullable_Label</label>
                                 <input type="checkbox" @bind="_conversionOptions.IsNullable" @bind:after="OnSettingsChanged"
-                                    class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
+                                       class="rounded" />
                             </div>
                         }
-                        <div class="flex items-center justify-between">
-                            <label
-                                class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.IsRequired_Label</label>
-                            <input type="checkbox" @bind="_conversionOptions.IsRequired" @bind:after="OnSettingsChanged"
-                                class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
-                        </div>
                         @if (!_conversionOptions.IsNullable)
                         {
-                            <div class="flex items-center justify-between">
-                                <label
-                                    class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.DefaultValues_Label</label>
-                                <input type="checkbox" @bind="_conversionOptions.IsDefaultInitialized"  @bind:after="OnSettingsChanged"
-                                    class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
+                            <div class="flex justify-between items-center">
+                                <label>@Localizer.DefaultValues_Label</label>
+                                <input type="checkbox" @bind="_conversionOptions.IsDefaultInitialized"
+                                       @bind:after="OnSettingsChanged" class="rounded" />
                             </div>
                         }
                     </div>
                 </details>
 
-                <details
-                    class="group bg-gray-100 dark:bg-[#34363a] rounded-lg border border-gray-200"
-                    open>
+                <details class="group rounded border border-gray-200 dark:border-[#30363d] bg-white dark:bg-[#0d1117]" open>
                     <summary
-                        class="cursor-pointer px-4 py-2 text-sm font-bold text-gray-800 dark:text-gray-100 flex justify-between items-center">
+                        class="cursor-pointer px-3 py-2 text-xs font-bold text-gray-700 dark:text-gray-200 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-[#161b22]">
                         <span>@Localizer.NamingSettings_Title</span>
-                        <svg class="w-4 h-4 transition-transform group-open:rotate-180" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        <svg class="w-3 h-3 transition-transform group-open:rotate-180 opacity-50" fill="none"
+                             stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7" />
                         </svg>
                     </summary>
-                    <div class="p-4 space-y-3 border-t border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <label
-                                class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.UseFileScoped_Label</label>
-                            <input type="checkbox" @bind="_conversionOptions.UseFileScoped"
-                                class="rounded-sm text-blue-600 dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-400">
+                    <div
+                        class="p-3 space-y-3 border-t border-gray-200 dark:border-[#30363d] text-[11px] dark:text-gray-300">
+                        <div class="flex justify-between items-center">
+                            <label>@Localizer.UseFileScoped_Label</label>
+                            <input type="checkbox" @bind="_conversionOptions.UseFileScoped" @bind:after="OnSettingsChanged"
+                                   class="rounded" />
                         </div>
-                        <div class="flex flex-col space-y-2">
-                            <label
-                                class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.Namespace_Label</label>
-                            <input type="text" @bind="_conversionOptions.Namespace"
-                                class="w-full px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#34363a] border border-gray-300 dark:border-gray-600 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-600">
+                        <div class="flex flex-col gap-1">
+                            <label class="opacity-70">@Localizer.Namespace_Label</label>
+                            <input type="text" @bind="_conversionOptions.Namespace" @bind:after="OnSettingsChanged"
+                                   class="w-full px-2 py-1 bg-gray-50 dark:bg-[#0d1117] border dark:border-gray-600 rounded outline-none focus:ring-1 focus:ring-blue-500" />
                         </div>
-                        <div class="flex flex-col space-y-2">
-                            <label
-                                class="text-xs font-mono text-gray-800 dark:text-gray-200">@Localizer.RootName_Label</label>
-                            <input type="text" @bind="_conversionOptions.RootTypeName"
-                                class="w-full px-2 py-1 text-xs bg-white text-gray-800 dark:text-white dark:bg-[#34363a] border border-gray-300 dark:border-gray-600 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-600">
+
+                        <div class="flex flex-col gap-1">
+                            <label class="opacity-70">@Localizer.RootName_Label</label>
+                            <input type="text" @bind="_conversionOptions.RootTypeName" @bind:after="OnSettingsChanged"
+                                   class="w-full px-2 py-1 bg-gray-50 dark:bg-[#0d1117] border dark:border-gray-600 rounded outline-none focus:ring-1 focus:ring-blue-500" />
                         </div>
                     </div>
                 </details>
-            </div>
+            }
+            else
+            {
+                <div class="rounded border border-gray-200 dark:border-[#30363d] bg-white dark:bg-[#0d1117] p-3 text-[11px] text-gray-600 dark:text-gray-300">
+                    @Localizer.ResourceManager.GetString("NoAdditionalSettings_Message", Localizer.Culture)
+                </div>
+            }
         </div>
     </aside>
 
-    <div class="flex-1 flex flex-col">
-
+    <div class="flex flex-col flex-1 min-w-0 h-full">
         <header
-            class="lg:hidden flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:bg-[#34363a] ] sticky top-0 z-30">
-            <h1 class="text-base font-semibold text-gray-900 dark:text-white">@Localizer.Settings_Title</h1>
-            <button class="text-sm font-semibold text-blue-600" @onclick="() => _showSidebar = true">☰</button>
-        </header>
+            class="shrink-0 flex flex-wrap gap-2 items-center justify-between px-4 py-2 border-b border-[#E7E7E7] dark:border-[#30363d] bg-white/90 dark:bg-[#161b22]/90 backdrop-blur z-20">
+            <div class="flex items-center gap-2 min-w-0">
+                <button class="lg:hidden p-1.5 rounded bg-gray-100 dark:bg-[#30363d] text-gray-600 dark:text-gray-300"
+                        @onclick="() => _showSidebar = true">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <button @onclick="SwapFormatsAsync"
+                        class="h-8 px-3 text-[11px] font-bold rounded-md border border-gray-300 dark:border-[#30363d] bg-white dark:bg-[#0d1117] text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1f2937] transition">
+                    @Localizer.ResourceManager.GetString("Swap_Button", Localizer.Culture)
+                </button>
+            </div>
 
-        <main class="flex-1 p-4 flex flex-col space-y-4">
-            <div class="flex flex-col sm:flex-row sm:justify-between items-center gap-4">
+            <div class="flex items-center gap-2">
                 <FileUpload OnFileUploaded="HandleFileUpload" />
 
-                <div class="flex flex-wrap sm:flex-nowrap gap-2 items-center">
-                    <button type="button" aria-label="Copy Code"
-                        class="flex items-center justify-center px-3 py-1.5 text-xs font-mono font-semibold rounded-full
-                   text-white bg-[#4CAF50] hover:bg-[#3E8E41] transition-colors duration-200 dark:bg-[#4CAF50] dark:hover:bg-[#3E8E41]"
-                        @onclick="CopyToClipboard">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                        </svg>
-                        <span>@Localizer.CopyCode_Button</span>
-                    </button>
+                <button @onclick="ShowLastOutputAsync" disabled="@(!HasLastOutput)"
+                        class="h-8 px-3 text-[11px] font-bold rounded-md border border-gray-300 dark:border-[#30363d] bg-white dark:bg-[#0d1117] text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1f2937] disabled:opacity-50 disabled:cursor-not-allowed transition">
+                    @Localizer.ResourceManager.GetString("LastOutput_Button", Localizer.Culture)
+                </button>
 
-                    <button id="convert-button" type="button" @onclick="Convert" disabled="@_isConverting"
-                        class="@(_isConverting
-                                                                                ? "relative flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-mono font-semibold rounded-full text-white bg-[#388A34] dark:bg-[#388A34] disabled:opacity-70 disabled:cursor-not-allowed"
-                                                                                : "relative flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-mono font-semibold rounded-full text-white bg-[#007ACC] hover:bg-[#388A34] dark:bg-[#007ACC] dark:hover:bg-[#388A34] disabled:opacity-70 disabled:cursor-not-allowed")">
-
-                        @if (_isConverting)
-                        {
-                            <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                                </circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                            </svg>
-                        }
-
-                        <span>@(_isConverting? Localizer.Converting_Label: Localizer.Convert_Button)</span>
-                    </button>
-
-                    <button id="convert-button" type="button" @onclick="ConvertToTypeScript" disabled="@_isConverting"
-                        class="@(_isConverting
-                                                                                ? "relative flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-mono font-semibold rounded-full text-white bg-[#388A34] dark:bg-[#388A34] disabled:opacity-70 disabled:cursor-not-allowed"
-                                                                                : "relative flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-mono font-semibold rounded-full text-white bg-[#007ACC] hover:bg-[#388A34] dark:bg-[#007ACC] dark:hover:bg-[#388A34] disabled:opacity-70 disabled:cursor-not-allowed")">
-
-                        @if (_isConverting)
-                        {
-                            <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                                </circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                            </svg>
-                        }
-
-                        <span>@(_isConverting? "Converting to Json ...": "Convert to JSON")</span>
-                    </button>
-
-                </div>
-
+                <button @onclick="Convert" disabled="@(_isConverting || !IsCurrentRouteSupported)"
+                        class="h-8 px-4 text-[11px] font-bold rounded-md bg-[#388A34] hover:bg-[#2e702a] text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2">
+                    @if (_isConverting)
+                    {
+                        <div
+                            class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    }
+                    @(_isConverting ? Localizer.Converting_Label : Localizer.Convert_Button)
+                </button>
             </div>
+        </header>
 
-            <div class="flex flex-col lg:flex-row gap-4 flex-1">
-                <div class="w-full lg:w-1/2 flex flex-col">
-                    <label
-                        class="text-sm font-mono font-semibold text-gray-800 dark:text-gray-200 mb-2">@Localizer.JsonEditor_Label</label>
-                    <StandaloneCodeEditor @ref="_jsonEditor" Id="json-editor"
-                        OnDidChangeModelContent="OnJsonDidChangeModelContent"
-                        ConstructionOptions="@((editor) => CreateEditorOptions("json"))"
-                        CssClass="flex-1 h-[50vh] lg:h-[calc(100vh-12rem)] rounded-sm border border-gray-300 dark:bg-[#34363a]" />
-                </div>
-                <div class="w-full lg:w-1/2 flex flex-col">
-                    <label
-                        class="text-sm font-mono font-semibold text-gray-800 dark:text-gray-200 mb-2">@Localizer.CsharpEditor_Label</label>
-                    <StandaloneCodeEditor @ref="_csharpEditor" Id="csharp-editor"
-                        OnDidChangeModelContent="OnCsharpDidChangeModelContent"
-                        ConstructionOptions="@((editor) => CreateEditorOptions("csharp"))"
-                        CssClass="flex-1 h-[50vh] lg:h-[calc(100vh-12rem)] rounded-sm border border-gray-300 dark:bg-[#34363a]" />
-                </div>
-            </div>
+        <main class="flex-1 min-h-0 relative bg-[#fffffe] dark:bg-[#1b1f23]">
+            <StandaloneCodeEditor @ref="_inputEditor" Id="input-editor" OnDidChangeModelContent="OnInputChanged"
+                                  ConstructionOptions="@((e) => CreateEditorOptions(_inputFormat.ToString().ToLower()))"
+                                  CssClass="absolute inset-0 h-full w-full" />
         </main>
     </div>
+
+    @if (_showOutputDialog)
+    {
+        <div class="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
+             @onclick="CloseOutputDialog">
+            <div class="w-full max-w-5xl h-[85vh] rounded-lg overflow-hidden shadow-2xl border border-gray-200 dark:border-[#30363d] bg-white dark:bg-[#0d1117] flex flex-col"
+                 @onclick:stopPropagation="true">
+                <header class="h-11 px-4 flex items-center justify-between border-b border-[#E7E7E7] dark:border-[#30363d] bg-gray-50 dark:bg-[#161b22]">
+                    <div class="flex items-center justify-between w-full gap-3">
+                        <div class="text-xs font-bold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+                            @Localizer.ResourceManager.GetString("Output_Label", Localizer.Culture) - @_modalOutputFormat
+                            @if (_lastOutputAt is not null)
+                            {
+                                <span class="ml-2 font-normal normal-case text-gray-500 dark:text-gray-400">@_lastOutputAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                            }
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @onclick="CopyModalOutputToClipboard"
+                                    class="h-8 px-3 text-[11px] font-bold rounded-md border border-gray-300 dark:border-[#30363d] bg-white dark:bg-[#0d1117] text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1f2937] transition">
+                                @Localizer.CopyCode_Button
+                            </button>
+                            <button class="text-gray-500 hover:text-red-500" @onclick="CloseOutputDialog">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+                <div class="flex-1 min-h-0 relative">
+                    <StandaloneCodeEditor @ref="_outputEditor" Id="output-editor"
+                                          ConstructionOptions="@((e) => CreateEditorOptions(_modalOutputFormat.ToString().ToLower(), true))"
+                                          CssClass="absolute inset-0 h-full w-full" />
+                </div>
+            </div>
+        </div>
+    }
 </div>

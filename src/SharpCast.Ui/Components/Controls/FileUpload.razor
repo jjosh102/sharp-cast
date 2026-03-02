@@ -1,6 +1,6 @@
 @inject ToastService ToastService
 <label for="file-upload"
-  class="flex items-center space-x-1 px-3 py-1.5 text-xs font-mono font-semibold bg-[#4CAF50] rounded-full text-white hover:bg-[#3E8E41] transition-colors duration-200">
+  class="h-8 inline-flex items-center gap-1 px-3 text-[11px] font-bold rounded-md border border-gray-300 dark:border-[#30363d] bg-white dark:bg-[#0d1117] text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1f2937] transition-colors duration-200">
   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
       d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
@@ -10,7 +10,7 @@
 </label>
 
 @code {
-  private const string AllowedExtensions = ".txt,.json";
+  private const string AllowedExtensions = ".txt,.json,.cs,.ts";
 
   private string _fileContent = string.Empty;
 

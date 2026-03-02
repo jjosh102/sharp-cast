@@ -1,180 +1,50 @@
 # Sharp Cast
 
-A simple tool for converting JSON data into C# POCO (Plain Old CLR Object) classes with support for records, customizable property access, nullable types, and various collection types.
+Minimal web tool and converter library for transforming JSON, C#, and TypeScript models.
 
-## Features
 
-- Convert JSON to C# classes or records
-- Support for nested objects and arrays
-- Customizable property access patterns
-- Optional JSON property name attributes
-- Nullable type support
-- Required property markers
-- Default value initialization
-- Multiple array type options
-- Primary constructor support for records
+## Project Layout
 
-## Settings
+- `src/SharpCast.ModelConverter`: core conversion logic
+- `src/SharpCast.Ui`: Blazor WebAssembly app
+- `tests/SharpCast.ModelConverter.Tests`: converter/unit tests
 
-### Basic Settings
+## Supported Conversion Routes
 
-- `Namespace`: Set the namespace for generated classes (default: "JsonToCsharp")
-- `RootTypeName`: Set the name for the root class/record (default: "Root")
-- `UseRecords`: Generate C# records instead of classes
-- `UsePrimaryConstructor`: Use primary constructor syntax for records (C# 9.0+)
+Current routes wired in UI:
 
-### Property Settings
+- `Json -> CSharp`
+- `Json -> TypeScript` (pipeline: `Json -> CSharp -> TypeScript`)
+- `CSharp -> Json`
+- `CSharp -> TypeScript`
+- `TypeScript -> CSharp`
+- `TypeScript -> Json` (pipeline: `TypeScript -> CSharp -> Json`)
 
-- `PropertyAccess`: Control property accessor patterns
-  - `Mutable`: Generate `{ get; set; }` properties
-  - `Immutable`: Generate `{ get; init; }` properties (C# 9.0+)
+Route handling lives in:
+- `src/SharpCast.Ui/Components/Pages/Converter.razor.cs`
 
-- `ArrayType`: Choose collection type for arrays
-  - `IReadOnlyList<T>`: Immutable list interface
-  - `List<T>`: Standard mutable list
-  - `T[]`: Array type
+## Converter Entry Points
 
-- `AddAttribute`: Add `[JsonPropertyName]` attributes for JSON serialization
-- `IsNullable`: Generate nullable reference types
-- `IsRequired`: Add `required` keyword to properties (C# 11.0+)
-- `IsDefaultInitialized`: Initialize properties with default values
+- `JsonToCSharpConverter : IModelConverter<ConversionOptions>`
+- `CSharpToTypeScriptConverter : IModelConverter`
+- `CSharpToJsonConverter : IModelConverter<JsonSerializerOptions>`
+- `TypeScriptToCSharpConverter : IModelConverter<ConversionOptions>`
 
-## Examples
+DI registration:
+- `src/SharpCast.ModelConverter/ModelConverterExtensions.cs`
 
-### Basic Class Generation
+## C# Generation Options (for model-generation routes)
 
-Input JSON:
-```json
-{
-    "name": "John",
-    "age": 30,
-    "isEmployee": true
-}
-```
+Defined in `ConversionOptions`:
 
-Settings:
-```csharp
-var options = new ConversionSettings
-{
-    Namespace = "MyNamespace",
-    UseRecords = false,
-    PropertyAccess = PropertyAccess.Mutable
-};
-```
-
-Output:
-```csharp
-namespace MyNamespace;
-
-public class Root
-{
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
-    
-    [JsonPropertyName("age")]
-    public int Age { get; set; }
-    
-    [JsonPropertyName("isEmployee")]
-    public bool IsEmployee { get; set; }
-}
-```
-
-### Record with Primary Constructor
-
-Settings:
-```csharp
-var options = new ConversionSettings
-{
-    UseRecords = true,
-    UsePrimaryConstructor = true,
-    AddAttribute = true
-};
-```
-
-Output:
-```csharp
-public record Root(
-    [property: JsonPropertyName("name")] string Name,
-    [property: JsonPropertyName("age")] int Age,
-    [property: JsonPropertyName("isEmployee")] bool IsEmployee
-);
-```
-
-### Nullable and Required Properties
-
-Settings:
-```csharp
-var options = new ConversionSettings
-{
-    IsNullable = true,
-    IsRequired = true,
-    PropertyAccess = PropertyAccess.Immutable
-};
-```
-
-Output:
-```csharp
-public class Root
-{
-    [JsonPropertyName("name")]
-    public required string? Name { get; init; }
-    
-    [JsonPropertyName("age")]
-    public required int? Age { get; init; }
-}
-```
-
-### Array Type Options
-
-Input JSON:
-```json
-{
-    "items": ["A", "B", "C"]
-}
-```
-
-Settings for different array types:
-```csharp
-// IReadOnlyList
-options.ArrayType = ArrayType.IReadOnlyList;
-// Output: public IReadOnlyList<string> Items { get; init; }
-
-// List
-options.ArrayType = ArrayType.List;
-// Output: public List<string> Items { get; init; }
-
-// Array
-options.ArrayType = ArrayType.Array;
-// Output: public string[] Items { get; init; }
-```
-
-### Default Initialization
-
-Settings:
-```csharp
-var options = new ConversionSettings
-{
-    IsDefaultInitialized = true,
-    PropertyAccess = PropertyAccess.Immutable
-};
-```
-
-Output:
-```csharp
-public class Root
-{
-    public string Name { get; init; } = string.Empty;
-    public IReadOnlyList<string> Tags { get; init; } = [];
-    public Address Address { get; init; } = new();
-}
-```
-
-## Type Mapping
-
-The converter automatically maps JSON types to C# types:
-- JSON strings → `string`
-- JSON numbers → `int` or `double`
-- JSON booleans → `bool`
-- JSON arrays → `IReadOnlyList<T>`, `List<T>`, or `T[]`
-- JSON objects → Nested classes/records
-- JSON dates → `DateTime`
+- `UseRecords`
+- `UsePrimaryConstructor`
+- `PropertyAccess` (`Mutable` / `Immutable`)
+- `ArrayType` (`IReadOnlyList` / `List` / `Array`)
+- `AddAttribute`
+- `IsNullable`
+- `IsRequired`
+- `IsDefaultInitialized`
+- `UseFileScoped`
+- `Namespace`
+- `RootTypeName`

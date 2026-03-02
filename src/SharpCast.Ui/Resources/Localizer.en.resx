@@ -211,4 +211,25 @@
   <data name="FileUploadError" xml:space="preserve">
   <value>File Upload Error</value>
 </data>
+  <data name="ConversionRoute_Label" xml:space="preserve">
+    <value>Conversion Route</value>
+  </data>
+  <data name="Swap_Button" xml:space="preserve">
+    <value>Swap</value>
+  </data>
+  <data name="LastOutput_Button" xml:space="preserve">
+    <value>Last Output</value>
+  </data>
+  <data name="NoAdditionalSettings_Message" xml:space="preserve">
+    <value>No additional settings are required for this conversion route.</value>
+  </data>
+  <data name="Output_Label" xml:space="preserve">
+    <value>Output</value>
+  </data>
+  <data name="NoOutputToCopy_Message" xml:space="preserve">
+    <value>No output to copy.</value>
+  </data>
+  <data name="OutputCopySuccess_Message" xml:space="preserve">
+    <value>Output copied to clipboard.</value>
+  </data>
 </root>

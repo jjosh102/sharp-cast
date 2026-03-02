@@ -22,10 +22,14 @@ public static partial class StringHelperExtensions
 
     public static string EnsureValidPropertyName(this string propertyName)
     {
-        if (int.TryParse(propertyName, out _))
+        if (string.IsNullOrWhiteSpace(propertyName))
+            return "_";
+
+        if (char.IsDigit(propertyName[0]))
         {
             propertyName = $"_{propertyName}";
         }
+
         return propertyName;
     }
 

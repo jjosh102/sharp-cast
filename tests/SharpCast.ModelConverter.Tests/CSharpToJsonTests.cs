@@ -144,5 +144,37 @@ public sealed class CSharpToJsonTests
 
         Assert.False(ok);
         Assert.Contains("Error converting C#", json);
-    }    
+    }
+
+    [Fact]
+    public void Parses_NegativeDecimal_LiteralValuesCorrectly()
+    {
+        var code = @"
+            var x = new T {
+                Amount = -12.5m
+            };
+        ";
+
+        var conv = new CSharpToJsonConverter();
+        var ok = conv.TryConvert(code, _opts, out var json);
+
+        Assert.True(ok);
+        Assert.Equal("{\"Amount\":-12.5}", json);
+    }
+
+    [Fact]
+    public void Handles_DateTimeOffset_TypeAsStringSample()
+    {
+        var code = @"
+            public class P {
+                public DateTimeOffset CreatedAt { get; set; }
+            }
+        ";
+
+        var conv = new CSharpToJsonConverter();
+        var ok = conv.TryConvert(code, _opts, out var json);
+
+        Assert.True(ok);
+        Assert.Equal("{\"P\":{\"CreatedAt\":\"0001-01-01T00:00:00Z\"}}", json);
+    }
 }

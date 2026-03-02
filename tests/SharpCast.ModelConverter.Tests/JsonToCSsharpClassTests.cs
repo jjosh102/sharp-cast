@@ -650,7 +650,7 @@ public class JsonToCSsharpClassTests
         Assert.Contains("[JsonPropertyName(\"123\")]", result);
         Assert.Contains("[JsonPropertyName(\"456item\")]", result);
         Assert.Contains("public string _123", result);
-        Assert.Contains("public bool 456item", result);
+        Assert.Contains("public bool _456item", result);
     }
 
     [Fact]

@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <TailwindToolsVersion Condition="'$(TailwindToolsVersion)' == ''">4.1.17</TailwindToolsVersion>
+        <TailwindToolsVersion Condition="'$(TailwindToolsVersion)' == ''">4.2.1</TailwindToolsVersion>
     </PropertyGroup>
 
     <PropertyGroup>

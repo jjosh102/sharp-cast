@@ -91,11 +91,28 @@ public sealed class CSharpToJsonConverter : IModelConverter<JsonSerializerOption
             },
 
             PrefixUnaryExpressionSyntax u when u.Operand is LiteralExpressionSyntax lit =>
-                lit.Token.Value is int i ? -i :
-                lit.Token.Value is double d ? -d :
-                throw new InvalidOperationException("Unsupported unary literal"),
+                NegateNumericLiteral(lit.Token.Value),
 
             _ => throw new InvalidOperationException("Only pure literals allowed in object initializer")
+        };
+    }
+
+    private static object NegateNumericLiteral(object? value)
+    {
+        return value switch
+        {
+            sbyte n => (sbyte)-n,
+            byte n => -n,
+            short n => (short)-n,
+            ushort n => -n,
+            int n => -n,
+            uint n => -(long)n,
+            long n => -n,
+            ulong n => -(decimal)n,
+            float n => -n,
+            double n => -n,
+            decimal n => -n,
+            _ => throw new InvalidOperationException("Unsupported unary literal")
         };
     }
 
@@ -108,7 +125,7 @@ public sealed class CSharpToJsonConverter : IModelConverter<JsonSerializerOption
             "string" => "",
             "bool" => false,
             "int" or "long" or "float" or "double" or "decimal" => 0,
-            "DateTime" => "0001-01-01T00:00:00Z",
+            "DateTime" or "DateTimeOffset" => "0001-01-01T00:00:00Z",
             _ when t is not null && t.EndsWith("[]") => Array.Empty<object>(),
             _ when t is not null && (t.StartsWith("List<") || t.StartsWith("IReadOnlyList<")) => Array.Empty<object>(),
             _ => null
