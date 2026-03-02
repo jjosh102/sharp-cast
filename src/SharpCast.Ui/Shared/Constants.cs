@@ -8,6 +8,7 @@ public static class Constants
     public const string InputEditorContents = "input-editor-contents";
     public const string LastConversionOutput = "last-conversion-output";
     public const string SettingsContents = "settings-contents";
+    public const string ConversionRoute = "conversion-route";
     public const string PreferredCulture = " preferred-culture";
 
 }

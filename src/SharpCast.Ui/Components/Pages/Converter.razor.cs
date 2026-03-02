@@ -7,6 +7,7 @@ using Microsoft.JSInterop;
 using SharpCast.Ui.Components.AppState;
 using SharpCast.Ui.Components.Toast;
 using Blazored.LocalStorage;
+using SharpCast.Ui.Models;
 using SharpCast.Ui.Resources;
 using SharpCast.Ui.Shared;
 
@@ -78,17 +79,20 @@ public partial class Converter : ComponentBase
 
         _suppressInputSave = true;
 
-        await LoadSettings();
+        var preferences = await _localStorageServiceAsync
+            .GetItemAsync<Preferences>(Constants.SavedPreferences) ?? AppState.Preferences;
+
+        await LoadSettings(preferences);
         await LoadLastOutputSnapshot();
         await SetEditorLanguageSafe(_inputEditor, _inputFormat);
-        await LoadInputContent();
+        await LoadInputContent(preferences);
 
         _suppressInputSave = false;
     }
 
-    private async Task LoadSettings()
+    private async Task LoadSettings(Preferences preferences)
     {
-        if (!AppState.Preferences.IsSettingsSaved)
+        if (!preferences.IsSettingsSaved)
             return;
 
         var saved = await _localStorageServiceAsync
@@ -96,6 +100,18 @@ public partial class Converter : ComponentBase
 
         if (saved != null)
             _conversionOptions = saved;
+
+        var savedRoute = await _localStorageServiceAsync
+            .GetItemAsync<ConversionRoutePreference>(Constants.ConversionRoute);
+
+        if (savedRoute is null)
+            return;
+
+        if (GetUnsupportedReason(savedRoute.InputFormat, savedRoute.OutputFormat) is not null)
+            return;
+
+        _inputFormat = savedRoute.InputFormat;
+        _outputFormat = savedRoute.OutputFormat;
     }
 
     private void OnSettingsChanged()
@@ -107,9 +123,24 @@ public partial class Converter : ComponentBase
             .SetItem(Constants.SettingsContents, _conversionOptions);
     }
 
-    private async Task LoadInputContent()
+    private async Task SaveRoute()
     {
-        if (!AppState.Preferences.IsEditorContentSaved)
+        if (!AppState.Preferences.IsSettingsSaved)
+            return;
+
+        var route = new ConversionRoutePreference
+        {
+            InputFormat = _inputFormat,
+            OutputFormat = _outputFormat
+        };
+
+        await _localStorageServiceAsync
+            .SetItemAsync(Constants.ConversionRoute, route);
+    }
+
+    private async Task LoadInputContent(Preferences preferences)
+    {
+        if (!preferences.IsEditorContentSaved)
             return;
 
         var content = await _localStorageServiceAsync
@@ -297,21 +328,23 @@ public partial class Converter : ComponentBase
 
         _inputFormat = format;
         await SetEditorLanguageSafe(_inputEditor, _inputFormat);
+        await SaveRoute();
     }
 
-    private Task OnOutputFormatChanged(ChangeEventArgs args)
+    private async Task OnOutputFormatChanged(ChangeEventArgs args)
     {
         if (!Enum.TryParse<CodeFormat>(args.Value?.ToString(), out var format))
-            return Task.CompletedTask;
+            return;
 
         _outputFormat = format;
-        return Task.CompletedTask;
+        await SaveRoute();
     }
 
     private async Task SwapFormatsAsync()
     {
         (_inputFormat, _outputFormat) = (_outputFormat, _inputFormat);
         await SetEditorLanguageSafe(_inputEditor, _inputFormat);
+        await SaveRoute();
     }
 
     private async Task Convert()
@@ -321,6 +354,8 @@ public partial class Converter : ComponentBase
             await ShowToastAsync(CurrentRouteMessage, ToastType.Error, "Unsupported Route");
             return;
         }
+
+        await SaveRoute();
 
         _isConverting = true;
         await Task.Delay(50);
@@ -531,4 +566,10 @@ public sealed class ConversionSnapshot
     public CodeFormat OutputFormat { get; set; }
     public string Output { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; }
+}
+
+public sealed class ConversionRoutePreference
+{
+    public CodeFormat InputFormat { get; set; }
+    public CodeFormat OutputFormat { get; set; }
 }
