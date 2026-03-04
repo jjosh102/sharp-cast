@@ -98,7 +98,7 @@ public partial class Converter : ComponentBase
         var saved = await _localStorageServiceAsync
             .GetItemAsync<ConversionOptions>(Constants.SettingsContents);
 
-        if (saved != null)
+        if (saved is not null)
             _conversionOptions = saved;
 
         var savedRoute = await _localStorageServiceAsync
@@ -158,7 +158,6 @@ public partial class Converter : ComponentBase
                 .GetItemAsStringAsync(Constants.CsharpEditorContents);
         }
 
-        // Compatibility fallback for previously JSON-serialized string storage.
         if (string.IsNullOrWhiteSpace(content))
         {
             content = await _localStorageServiceAsync
@@ -342,8 +341,34 @@ public partial class Converter : ComponentBase
 
     private async Task SwapFormatsAsync()
     {
+        var inputContent = await GetEditorValueSafe(_inputEditor) ?? string.Empty;
+        var outputContent = _modalOutput.Length > 0
+            ? _modalOutput
+            : _lastSnapshot?.Output ?? string.Empty;
+
         (_inputFormat, _outputFormat) = (_outputFormat, _inputFormat);
         await SetEditorLanguageSafe(_inputEditor, _inputFormat);
+        await SetEditorValueSafe(_inputEditor, outputContent);
+
+        _modalOutput = inputContent;
+        _modalOutputFormat = _outputFormat;
+
+        if (_lastSnapshot is not null)
+        {
+            _lastSnapshot = new ConversionSnapshot
+            {
+                InputFormat = _inputFormat,
+                OutputFormat = _outputFormat,
+                Output = _modalOutput,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
+            _lastOutputAt = _lastSnapshot.CreatedAt;
+
+            await _localStorageServiceAsync
+                .SetItemAsync(Constants.LastConversionOutput, _lastSnapshot);
+        }
+
         await SaveRoute();
     }
 
