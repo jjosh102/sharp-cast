@@ -1,50 +1,26 @@
 # Sharp Cast
 
-Minimal web tool and converter library for transforming JSON, C#, and TypeScript models.
+Sharp Cast is a small model-conversion tool for JSON, C#, and TypeScript.
 
+## What it does
 
-## Project Layout
-
-- `src/SharpCast.ModelConverter`: core conversion logic
-- `src/SharpCast.Ui`: Blazor WebAssembly app
-- `tests/SharpCast.ModelConverter.Tests`: converter/unit tests
-
-## Supported Conversion Routes
-
-Current routes wired in UI:
+It currently supports:
 
 - `Json -> CSharp`
-- `Json -> TypeScript` (pipeline: `Json -> CSharp -> TypeScript`)
+- `Json -> TypeScript`
 - `CSharp -> Json`
 - `CSharp -> TypeScript`
 - `TypeScript -> CSharp`
-- `TypeScript -> Json` (pipeline: `TypeScript -> CSharp -> Json`)
+- `TypeScript -> Json`
 
-Route handling lives in:
-- `src/SharpCast.Ui/Components/Pages/Converter.razor.cs`
+## Project structure
 
-## Converter Entry Points
+- `src/SharpCast.ModelConverter` - conversion engine
+- `src/SharpCast.Ui` - Blazor WebAssembly UI
+- `tests/SharpCast.ModelConverter.Tests` - tests
 
-- `JsonToCSharpConverter : IModelConverter<ConversionOptions>`
-- `CSharpToTypeScriptConverter : IModelConverter`
-- `CSharpToJsonConverter : IModelConverter<JsonSerializerOptions>`
-- `TypeScriptToCSharpConverter : IModelConverter<ConversionOptions>`
+## Key files
 
-DI registration:
-- `src/SharpCast.ModelConverter/ModelConverterExtensions.cs`
-
-## C# Generation Options (for model-generation routes)
-
-Defined in `ConversionOptions`:
-
-- `UseRecords`
-- `UsePrimaryConstructor`
-- `PropertyAccess` (`Mutable` / `Immutable`)
-- `ArrayType` (`IReadOnlyList` / `List` / `Array`)
-- `AddAttribute`
-- `IsNullable`
-- `IsRequired`
-- `IsDefaultInitialized`
-- `UseFileScoped`
-- `Namespace`
-- `RootTypeName`
+- Route handling: `src/SharpCast.Ui/Components/Pages/Converter.razor.cs`
+- DI setup: `src/SharpCast.ModelConverter/ModelConverterExtensions.cs`
+- C# generation options: `src/SharpCast.ModelConverter/Models/ConversionOptions.cs`
