@@ -302,6 +302,36 @@ public class CSharpToTypeScriptTests
     }
 
     [Fact]
+    public void Convert_TupleProperty_MapsToTypeScriptTuple()
+    {
+        string code = @"
+            public class Data
+            {
+                public (int X, string Y) Point { get; set; }
+            }
+        ";
+
+        _converter.TryConvert(code, out var ts);
+
+        Assert.Contains("Point: [number, string];", ts);
+    }
+
+    [Fact]
+    public void Convert_ValueTupleGeneric_MapsToTypeScriptTuple()
+    {
+        string code = @"
+            public class Data
+            {
+                public System.ValueTuple<int, bool> Flags { get; set; }
+            }
+        ";
+
+        _converter.TryConvert(code, out var ts);
+
+        Assert.Contains("Flags: [number, boolean];", ts);
+    }
+
+    [Fact]
     public void Convert_UnknownGenericWrapper_MapsToAny()
     {
         string code = @"

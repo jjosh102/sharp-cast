@@ -59,6 +59,51 @@ public sealed class TypeScriptToCSharpTests
     }
 
     [Fact]
+    public void Convert_InterfaceWithTuple_MapsToCSharpTuple()
+    {
+        var ts = """
+            interface Location {
+              coordinates: [number, number];
+              labeled: [name: string, value: number?];
+            }
+            """;
+
+        var options = new ConversionOptions
+        {
+            Namespace = "TestNamespace",
+            UseRecords = false
+        };
+
+        var ok = _converter.TryConvert(ts, options, out var csharp);
+
+        Assert.True(ok);
+        Assert.Contains("public (double, double) Coordinates", csharp);
+        Assert.Contains("public (string, double?) Labeled", csharp);
+    }
+
+    [Fact]
+    public void Convert_SingleElementTuple_MapsToArray()
+    {
+        var ts = """
+            interface Playlist {
+              tags: [string];
+            }
+            """;
+
+        var options = new ConversionOptions
+        {
+            Namespace = "TestNamespace",
+            UseRecords = false,
+            ArrayType = ArrayType.List
+        };
+
+        var ok = _converter.TryConvert(ts, options, out var csharp);
+
+        Assert.True(ok);
+        Assert.Contains("public List<string> Tags", csharp);
+    }
+
+    [Fact]
     public void Convert_NoInterface_ReturnsFalse()
     {
         var ts = "type X = string;";

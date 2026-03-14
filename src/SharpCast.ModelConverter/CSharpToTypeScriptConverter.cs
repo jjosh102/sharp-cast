@@ -229,6 +229,13 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
                 return (inner, true);
             }
 
+            if ((identifier.Equals("ValueTuple", StringComparison.Ordinal) ||
+                 identifier.Equals("Tuple", StringComparison.Ordinal)) && args.Count > 0)
+            {
+                var elements = args.Select(a => MapTypeSyntax(a, parentTypeParameters).TsType).ToList();
+                return ($"[{string.Join(", ", elements)}]", false);
+            }
+
             return ("any", false);
         }
 
@@ -237,8 +244,13 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
             return MapTypeSyntax(qn.Right, parentTypeParameters);
         }
 
-        if (typeSyntax is TupleTypeSyntax)
-            return ("any", false);
+        if (typeSyntax is TupleTypeSyntax tupleType)
+        {
+            var elements = tupleType.Elements
+                .Select(e => MapTypeSyntax(e.Type, parentTypeParameters).TsType)
+                .ToList();
+            return ($"[{string.Join(", ", elements)}]", false);
+        }
 
         var text = typeSyntax.ToString().Trim();
         if (text.Contains('<') || text.Contains('>'))

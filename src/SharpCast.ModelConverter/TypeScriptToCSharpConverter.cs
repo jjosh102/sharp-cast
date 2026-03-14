@@ -192,16 +192,16 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
 
     private static TypeMapping MapTsType(string tsType, bool optional, ArrayType arrayType)
     {
-        var normalized = Regex.Replace(tsType, @"\s+", " ").Trim();
+        var normalized = NormalizedRegex().Replace(tsType, " ").Trim();
         var nullableByUnion = false;
 
-        if (normalized.Contains('|'))
+        var unionParts = SplitTopLevel(normalized, '|');
+        if (unionParts.Count > 1)
         {
-            var parts = normalized.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-            nullableByUnion = parts.Any(p => p.Equals("null", StringComparison.OrdinalIgnoreCase) ||
-                                             p.Equals("undefined", StringComparison.OrdinalIgnoreCase));
-            normalized = parts.FirstOrDefault(p => !p.Equals("null", StringComparison.OrdinalIgnoreCase) &&
-                                                   !p.Equals("undefined", StringComparison.OrdinalIgnoreCase)) ?? "any";
+            nullableByUnion = unionParts.Any(p => p.Equals("null", StringComparison.OrdinalIgnoreCase) ||
+                                                  p.Equals("undefined", StringComparison.OrdinalIgnoreCase));
+            normalized = unionParts.FirstOrDefault(p => !p.Equals("null", StringComparison.OrdinalIgnoreCase) &&
+                                                        !p.Equals("undefined", StringComparison.OrdinalIgnoreCase)) ?? "any";
         }
 
         var isNullable = optional || nullableByUnion;
@@ -230,6 +230,27 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
         {
             var mappedValueType = MapTsType(valueType, false, arrayType).Type;
             mapped = $"Dictionary<string, {mappedValueType}>";
+        }
+        else if (TryParseTupleType(mapped, out var tupleElements))
+        {
+            if (tupleElements.Count == 1)
+            {
+                var elementType = MapTsType(tupleElements[0].Type, tupleElements[0].IsOptional, arrayType).Type;
+                mapped = arrayType switch
+                {
+                    ArrayType.IReadOnlyList => $"IReadOnlyList<{elementType}>",
+                    ArrayType.List => $"List<{elementType}>",
+                    ArrayType.Array => $"{elementType}[]",
+                    _ => $"{elementType}[]"
+                };
+            }
+            else
+            {
+                var mappedElements = tupleElements
+                    .Select(element => MapTsType(element.Type, element.IsOptional, arrayType).Type)
+                    .ToList();
+                mapped = $"({string.Join(", ", mappedElements)})";
+            }
         }
         else if (IsGenericType(mapped))
         {
@@ -277,6 +298,100 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
 
         valueType = match.Groups["value"].Value.Trim();
         return true;
+    }
+
+    private sealed record TupleElement(string Type, bool IsOptional);
+
+    private static bool TryParseTupleType(string tsType, out List<TupleElement> elements)
+    {
+        elements = [];
+        var trimmed = tsType.Trim();
+        if (trimmed.StartsWith("readonly ", StringComparison.OrdinalIgnoreCase))
+            trimmed = trimmed[9..].TrimStart();
+
+        if (!trimmed.StartsWith("[", StringComparison.Ordinal) || !trimmed.EndsWith("]", StringComparison.Ordinal))
+            return false;
+
+        var inner = trimmed[1..^1].Trim();
+        if (inner.Length == 0)
+            return true;
+
+        var parts = SplitTopLevel(inner, ',');
+        foreach (var raw in parts)
+        {
+            var part = raw.Trim();
+            if (part.Length == 0)
+                continue;
+
+            var typePart = StripTupleElementLabel(part);
+            var isOptional = typePart.EndsWith("?", StringComparison.Ordinal);
+            if (isOptional)
+                typePart = typePart[..^1].TrimEnd();
+
+            elements.Add(new TupleElement(typePart, isOptional));
+        }
+
+        return true;
+    }
+
+    private static string StripTupleElementLabel(string element)
+    {
+        var depth = 0;
+        for (int i = 0; i < element.Length; i++)
+        {
+            var ch = element[i];
+            switch (ch)
+            {
+                case '<':
+                case '(':
+                case '[':
+                    depth++;
+                    break;
+                case '>':
+                case ')':
+                case ']':
+                    depth = Math.Max(0, depth - 1);
+                    break;
+                case ':' when depth == 0:
+                    return element[(i + 1)..].Trim();
+            }
+        }
+
+        return element.Trim();
+    }
+
+    private static List<string> SplitTopLevel(string text, char separator)
+    {
+        var parts = new List<string>();
+        var depth = 0;
+        var start = 0;
+
+        for (int i = 0; i < text.Length; i++)
+        {
+            var ch = text[i];
+            switch (ch)
+            {
+                case '<':
+                case '(':
+                case '[':
+                    depth++;
+                    break;
+                case '>':
+                case ')':
+                case ']':
+                    depth = Math.Max(0, depth - 1);
+                    break;
+            }
+
+            if (ch == separator && depth == 0)
+            {
+                parts.Add(text[start..i].Trim());
+                start = i + 1;
+            }
+        }
+
+        parts.Add(text[start..].Trim());
+        return parts;
     }
 
     private static List<TsInterface> ParseInterfaces(string input)
@@ -346,4 +461,7 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
 
     [GeneratedRegex(@"^[A-Za-z_][A-Za-z0-9_]*$")]
     private static partial Regex SimpleIdentifierRegex();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex NormalizedRegex();
 }
