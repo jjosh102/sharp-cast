@@ -114,6 +114,101 @@ public sealed class TypeScriptToCSharpTests
     }
 
     [Fact]
+    public void Convert_UnionWithMultipleTypes_MapsToObject()
+    {
+        var ts = """
+            interface Example {
+              value: string | number;
+            }
+            """;
+
+        var options = new ConversionOptions
+        {
+            Namespace = "TestNamespace",
+            UseRecords = false
+        };
+
+        var ok = _converter.TryConvert(ts, options, out var csharp);
+
+        Assert.True(ok);
+        Assert.Contains("public object? Value", csharp);
+    }
+
+    [Fact]
+    public void Convert_GenericArrayAndReadonlyTypes_MapToConfiguredArrayType()
+    {
+        var ts = """
+            interface DataSet {
+              tags: Array<string>;
+              scores: ReadonlyArray<number>;
+              readonly names: readonly string[];
+            }
+            """;
+
+        var options = new ConversionOptions
+        {
+            Namespace = "TestNamespace",
+            UseRecords = false,
+            ArrayType = ArrayType.List
+        };
+
+        var ok = _converter.TryConvert(ts, options, out var csharp);
+
+        Assert.True(ok);
+        Assert.Contains("public List<string> Tags", csharp);
+        Assert.Contains("public List<double> Scores", csharp);
+        Assert.Contains("public List<string> Names", csharp);
+    }
+
+    [Fact]
+    public void Convert_GenericInterface_EmitsGenericType()
+    {
+        var ts = """
+            export interface Page<T> extends ResultBase {
+              items: Array<T>;
+              total: number;
+            }
+            """;
+
+        var options = new ConversionOptions
+        {
+            Namespace = "TestNamespace",
+            UseRecords = false
+        };
+
+        var ok = _converter.TryConvert(ts, options, out var csharp);
+
+        Assert.True(ok);
+        Assert.Contains("public class Page<T>", csharp);
+        Assert.Contains("public IReadOnlyList<T> Items", csharp);
+        Assert.Contains("public double Total", csharp);
+    }
+
+    [Fact]
+    public void Convert_ObjectLiteralProperty_MapsToObject()
+    {
+        var ts = """
+            interface Config {
+              settings: {
+                theme: string;
+                dark: boolean;
+              };
+            }
+            """;
+
+        var options = new ConversionOptions
+        {
+            Namespace = "TestNamespace",
+            UseRecords = false
+        };
+
+        var ok = _converter.TryConvert(ts, options, out var csharp);
+
+        Assert.True(ok);
+        Assert.Contains("public object? Settings", csharp);
+    }
+
+    [Fact]
     public void Convert_TypeScriptToJson_ViaCSharpPipeline_Works()
     {
         var ts = """

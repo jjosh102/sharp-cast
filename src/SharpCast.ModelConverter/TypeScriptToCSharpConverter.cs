@@ -5,7 +5,7 @@ namespace SharpCast.ModelConverter;
 
 public sealed partial class TypeScriptToCSharpConverter : IModelConverter<ConversionOptions>
 {
-    private sealed record TsInterface(string Name, List<TsProperty> Properties);
+    private sealed record TsInterface(string Name, List<TsProperty> Properties, IReadOnlyList<string> TypeParameters);
     private sealed record TsProperty(string Name, string Type, bool IsOptional);
 
     public bool TryConvert(string input, ConversionOptions options, out string output)
@@ -93,11 +93,14 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
     private static void EmitType(StringBuilder sb, TsInterface iface, ConversionOptions options, int indent)
     {
         var typeName = iface.Name.ToPascalCase().EnsureValidPropertyName();
+        var typeParameters = iface.TypeParameters.Count > 0
+            ? $"<{string.Join(", ", iface.TypeParameters)}>"
+            : string.Empty;
         var indentStr = new string(' ', indent * 4);
 
         if (options.UseRecords && options.UsePrimaryConstructor)
         {
-            sb.Append(indentStr).Append("public record ").Append(typeName).AppendLine("(");
+            sb.Append(indentStr).Append("public record ").Append(typeName).Append(typeParameters).AppendLine("(");
             for (int i = 0; i < iface.Properties.Count; i++)
             {
                 var prop = iface.Properties[i];
@@ -119,9 +122,9 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
         }
 
         if (options.UseRecords)
-            sb.Append(indentStr).Append("public record ").Append(typeName).AppendLine();
+            sb.Append(indentStr).Append("public record ").Append(typeName).Append(typeParameters).AppendLine();
         else
-            sb.Append(indentStr).Append("public class ").Append(typeName).AppendLine();
+            sb.Append(indentStr).Append("public class ").Append(typeName).Append(typeParameters).AppendLine();
 
         sb.Append(indentStr).AppendLine("{");
 
@@ -193,16 +196,51 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
     private static TypeMapping MapTsType(string tsType, bool optional, ArrayType arrayType)
     {
         var normalized = NormalizedRegex().Replace(tsType, " ").Trim();
+        normalized = StripReadonlyPrefix(normalized);
         var nullableByUnion = false;
 
         var unionParts = SplitTopLevel(normalized, '|');
         if (unionParts.Count > 1)
         {
-            nullableByUnion = unionParts.Any(p => p.Equals("null", StringComparison.OrdinalIgnoreCase) ||
-                                                  p.Equals("undefined", StringComparison.OrdinalIgnoreCase));
-            normalized = unionParts.FirstOrDefault(p => !p.Equals("null", StringComparison.OrdinalIgnoreCase) &&
-                                                        !p.Equals("undefined", StringComparison.OrdinalIgnoreCase)) ?? "any";
+            var nonNullParts = unionParts
+                .Where(p => !IsNullish(p))
+                .ToList();
+
+            nullableByUnion = nonNullParts.Count != unionParts.Count;
+
+            if (nonNullParts.Count == 0)
+            {
+                normalized = "any";
+            }
+            else if (nonNullParts.Count == 1)
+            {
+                normalized = nonNullParts[0];
+            }
+            else if (nonNullParts.All(IsStringLiteral))
+            {
+                normalized = "string";
+            }
+            else if (nonNullParts.All(IsBooleanLiteral))
+            {
+                normalized = "boolean";
+            }
+            else if (nonNullParts.All(IsNumberLiteral))
+            {
+                normalized = "number";
+            }
+            else
+            {
+                normalized = "object";
+            }
         }
+
+        normalized = StripReadonlyPrefix(normalized);
+        if (IsStringLiteral(normalized))
+            normalized = "string";
+        if (IsBooleanLiteral(normalized))
+            normalized = "boolean";
+        if (IsNumberLiteral(normalized))
+            normalized = "number";
 
         var isNullable = optional || nullableByUnion;
         var mapped = normalized switch
@@ -215,6 +253,9 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
             _ => normalized
         };
 
+        if (IsObjectLiteral(mapped))
+            mapped = "object";
+
         if (mapped.EndsWith("[]", StringComparison.Ordinal))
         {
             var inner = MapTsType(mapped[..^2], false, arrayType).Type;
@@ -224,6 +265,17 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
                 ArrayType.List => $"List<{inner}>",
                 ArrayType.Array => $"{inner}[]",
                 _ => $"{inner}[]"
+            };
+        }
+        else if (TryParseArrayGenericType(mapped, out var arrayValueType))
+        {
+            var mappedValueType = MapTsType(arrayValueType, false, arrayType).Type;
+            mapped = arrayType switch
+            {
+                ArrayType.IReadOnlyList => $"IReadOnlyList<{mappedValueType}>",
+                ArrayType.List => $"List<{mappedValueType}>",
+                ArrayType.Array => $"{mappedValueType}[]",
+                _ => $"{mappedValueType}[]"
             };
         }
         else if (TryParseRecordType(mapped, out var valueType))
@@ -286,6 +338,19 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
 
     private static bool IsGenericType(string tsType)
         => tsType.Contains('<') && tsType.Contains('>');
+
+    private static bool TryParseArrayGenericType(string tsType, out string valueType)
+    {
+        var match = ArrayTypeRegex().Match(tsType);
+        if (!match.Success)
+        {
+            valueType = string.Empty;
+            return false;
+        }
+
+        valueType = match.Groups["value"].Value.Trim();
+        return true;
+    }
 
     private static bool TryParseRecordType(string tsType, out string valueType)
     {
@@ -374,11 +439,13 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
                 case '<':
                 case '(':
                 case '[':
+                case '{':
                     depth++;
                     break;
                 case '>':
                 case ')':
                 case ']':
+                case '}':
                     depth = Math.Max(0, depth - 1);
                     break;
             }
@@ -402,6 +469,7 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
         foreach (Match match in matches)
         {
             var name = match.Groups["name"].Value;
+            var typeParameters = ParseTypeParameters(match.Groups["generics"].Value);
             var bodyStart = match.Index + match.Length;
             var bodyEnd = FindMatchingBrace(input, bodyStart - 1);
             if (bodyEnd <= bodyStart)
@@ -409,7 +477,7 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
 
             var body = input[bodyStart..bodyEnd];
             var properties = ParseProperties(body);
-            result.Add(new TsInterface(name, properties));
+            result.Add(new TsInterface(name, properties, typeParameters));
         }
 
         return result;
@@ -433,10 +501,12 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
     private static List<TsProperty> ParseProperties(string body)
     {
         var props = new List<TsProperty>();
-        var matches = PropertyRegex().Matches(body);
-
-        foreach (Match match in matches)
+        foreach (var segment in SplitPropertySegments(body))
         {
+            var match = PropertyRegex().Match(segment);
+            if (!match.Success)
+                continue;
+
             var rawName = match.Groups["name"].Value.Trim();
             rawName = rawName.Trim('"', '\'');
             var isOptional = match.Groups["optional"].Success;
@@ -447,17 +517,144 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
         return props;
     }
 
+    private static IEnumerable<string> SplitPropertySegments(string body)
+    {
+        var parts = new List<string>();
+        var depth = 0;
+        var start = 0;
+        var seenColon = false;
+
+        for (int i = 0; i < body.Length; i++)
+        {
+            var ch = body[i];
+            switch (ch)
+            {
+                case '<':
+                case '(':
+                case '[':
+                case '{':
+                    depth++;
+                    break;
+                case '>':
+                case ')':
+                case ']':
+                case '}':
+                    depth = Math.Max(0, depth - 1);
+                    break;
+                case ':' when depth == 0:
+                    seenColon = true;
+                    break;
+            }
+
+            if (depth == 0 && ch == ';')
+            {
+                parts.Add(body[start..i]);
+                start = i + 1;
+                seenColon = false;
+            }
+            else if (depth == 0 && ch == '\n' && seenColon)
+            {
+                var next = i + 1;
+                while (next < body.Length && char.IsWhiteSpace(body[next]))
+                    next++;
+
+                if (next < body.Length && body[next] != '|' && body[next] != '&')
+                {
+                    parts.Add(body[start..i]);
+                    start = i + 1;
+                    seenColon = false;
+                }
+            }
+        }
+
+        if (start < body.Length)
+            parts.Add(body[start..]);
+
+        foreach (var part in parts)
+        {
+            var trimmed = part.Trim();
+            if (string.IsNullOrEmpty(trimmed))
+                continue;
+
+            if (trimmed.EndsWith(",", StringComparison.Ordinal))
+                trimmed = trimmed[..^1].TrimEnd();
+
+            if (!string.IsNullOrEmpty(trimmed))
+                yield return trimmed;
+        }
+    }
+
     private static string EscapeString(string value)
         => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
-    [GeneratedRegex(@"\binterface\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\{", RegexOptions.Multiline)]
+    private static IReadOnlyList<string> ParseTypeParameters(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return [];
+
+        var trimmed = raw.Trim();
+        if (trimmed.StartsWith("<", StringComparison.Ordinal) && trimmed.EndsWith(">", StringComparison.Ordinal))
+            trimmed = trimmed[1..^1];
+
+        var parts = SplitTopLevel(trimmed, ',');
+        var result = new List<string>();
+
+        foreach (var part in parts)
+        {
+            var token = part.Trim();
+            if (token.Length == 0)
+                continue;
+
+            var extendsIndex = token.IndexOf("extends", StringComparison.OrdinalIgnoreCase);
+            if (extendsIndex >= 0)
+                token = token[..extendsIndex].Trim();
+
+            var defaultIndex = token.IndexOf('=', StringComparison.Ordinal);
+            if (defaultIndex >= 0)
+                token = token[..defaultIndex].Trim();
+
+            if (token.Length > 0)
+                result.Add(token);
+        }
+
+        return result;
+    }
+
+    private static bool IsNullish(string value)
+        => value.Equals("null", StringComparison.OrdinalIgnoreCase) ||
+           value.Equals("undefined", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsStringLiteral(string value)
+        => (value.Length >= 2 &&
+            ((value.StartsWith("'", StringComparison.Ordinal) && value.EndsWith("'", StringComparison.Ordinal)) ||
+             (value.StartsWith("\"", StringComparison.Ordinal) && value.EndsWith("\"", StringComparison.Ordinal))));
+
+    private static bool IsBooleanLiteral(string value)
+        => value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+           value.Equals("false", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsNumberLiteral(string value)
+        => double.TryParse(value, out _);
+
+    private static bool IsObjectLiteral(string value)
+        => value.StartsWith("{", StringComparison.Ordinal) && value.EndsWith("}", StringComparison.Ordinal);
+
+    private static string StripReadonlyPrefix(string value)
+        => value.StartsWith("readonly ", StringComparison.OrdinalIgnoreCase)
+            ? value[9..].TrimStart()
+            : value;
+
+    [GeneratedRegex(@"\binterface\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*(?<generics><[^>{}]+>)?\s*(?:extends\s+[^{}]+)?\{", RegexOptions.Multiline)]
     private static partial Regex InterfaceStartRegex();
 
-    [GeneratedRegex(@"^\s*(?:readonly\s+)?(?<name>['""][^'""]+['""]|[A-Za-z_$][A-Za-z0-9_$-]*)(?<optional>\?)?\s*:\s*(?<type>[^;]+);?\s*$", RegexOptions.Multiline)]
+    [GeneratedRegex(@"^\s*(?:readonly\s+)?(?<name>['""][^'""]+['""]|[A-Za-z_$][A-Za-z0-9_$-]*)(?<optional>\?)?\s*:\s*(?<type>.+)\s*$", RegexOptions.Singleline)]
     private static partial Regex PropertyRegex();
 
     [GeneratedRegex(@"^Record\s*<\s*string\s*,\s*(?<value>.+)\s*>$", RegexOptions.IgnoreCase)]
     private static partial Regex RecordTypeRegex();
+
+    [GeneratedRegex(@"^(?:ReadonlyArray|Array)\s*<\s*(?<value>.+)\s*>$", RegexOptions.IgnoreCase)]
+    private static partial Regex ArrayTypeRegex();
 
     [GeneratedRegex(@"^[A-Za-z_][A-Za-z0-9_]*$")]
     private static partial Regex SimpleIdentifierRegex();
