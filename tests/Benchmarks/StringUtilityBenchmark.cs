@@ -18,7 +18,7 @@ public partial class StringUtilityBenchmark
             if (validChars.Contains(c))
                 result.Add(c);
         }
-        return new string(result.ToArray());
+        return new string([.. result]);
     }
 
     [Benchmark]

@@ -35,6 +35,18 @@ public class JsonToCSsharpClassTests
     }
 
     [Fact]
+    public void ConvertJsonToClass_SerializedJsonString_ReturnsExpectedClass()
+    {
+        string json = "\"{\\\"name\\\":\\\"John\\\",\\\"age\\\":30}\"";
+
+        _converter.TryConvert(json, _defaultOptions, out var result);
+
+        Assert.Contains("public class RootClass", result);
+        Assert.Contains("public string Name", result);
+        Assert.Contains("public int Age", result);
+    }
+
+    [Fact]
     public void ConvertJsonToClass_InvalidJson_ThrowsError()
     {
 

@@ -11,10 +11,23 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
     public bool TryConvert(string json, ConversionOptions options, out string csharpCode)
 
     {
+        JsonDocument? innerDocument = null;
         try
         {
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
+
+            if (root.ValueKind == JsonValueKind.String)
+            {
+                var innerJson = root.GetString();
+                if (string.IsNullOrWhiteSpace(innerJson))
+                {
+                    throw new InvalidOperationException("JSON string is empty. Cannot convert to C# POCO.");
+                }
+
+                innerDocument = JsonDocument.Parse(innerJson);
+                root = innerDocument.RootElement;
+            }
 
             if (root.ValueKind == JsonValueKind.Array)
             {
@@ -38,6 +51,10 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
         {
             csharpCode = $"Error converting JSON to C#: {ex.Message}";
             return false;
+        }
+        finally
+        {
+            innerDocument?.Dispose();
         }
     }
 
