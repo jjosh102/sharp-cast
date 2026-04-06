@@ -209,6 +209,97 @@ public sealed class TypeScriptToCSharpTests
     }
 
     [Fact]
+    public void Convert_NullAndUndefined_MapToNullableObject()
+    {
+        var ts = """
+            interface Example {
+              missing: null;
+              absent: undefined;
+            }
+            """;
+
+        var options = new ConversionOptions
+        {
+            Namespace = "TestNamespace",
+            UseRecords = false
+        };
+
+        var ok = _converter.TryConvert(ts, options, out var csharp);
+
+        Assert.True(ok);
+        Assert.Contains("public object? Missing", csharp);
+        Assert.Contains("public object? Absent", csharp);
+    }
+
+    [Fact]
+    public void Convert_BigInt_MapsToLong()
+    {
+        var ts = """
+            interface Metrics {
+              total: bigint;
+            }
+            """;
+
+        var options = new ConversionOptions
+        {
+            Namespace = "TestNamespace",
+            UseRecords = false
+        };
+
+        var ok = _converter.TryConvert(ts, options, out var csharp);
+
+        Assert.True(ok);
+        Assert.Contains("public long Total", csharp);
+    }
+
+    [Fact]
+    public void Convert_IsNullableOption_ForcesNullableProperties()
+    {
+        var ts = """
+            interface Profile {
+              name: string;
+            }
+            """;
+
+        var options = new ConversionOptions
+        {
+            Namespace = "TestNamespace",
+            UseRecords = false,
+            IsNullable = true
+        };
+
+        var ok = _converter.TryConvert(ts, options, out var csharp);
+
+        Assert.True(ok);
+        Assert.Contains("public string? Name", csharp);
+    }
+
+    [Fact]
+    public void Convert_OptionalProperty_DoesNotEmitRequired()
+    {
+        var ts = """
+            interface Profile {
+              name: string;
+              nickname?: string;
+            }
+            """;
+
+        var options = new ConversionOptions
+        {
+            Namespace = "TestNamespace",
+            UseRecords = false,
+            IsRequired = true
+        };
+
+        var ok = _converter.TryConvert(ts, options, out var csharp);
+
+        Assert.True(ok);
+        Assert.Contains("public required string Name", csharp);
+        Assert.Contains("public string? Nickname", csharp);
+        Assert.DoesNotContain("required string? Nickname", csharp);
+    }
+
+    [Fact]
     public void Convert_TypeScriptToJson_ViaCSharpPipeline_Works()
     {
         var ts = """

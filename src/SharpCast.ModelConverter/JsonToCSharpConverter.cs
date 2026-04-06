@@ -135,8 +135,6 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
         Action<JsonElement, string, List<MemberDeclarationSyntax>, ConversionOptions> addNestedTypeAction,
         ConversionOptions options)
     {
-        string propertyType = DeterminePropertyType(propertyValue, propertyName, options.ArrayType);
-
         if (propertyValue.ValueKind == JsonValueKind.Object)
         {
             var nestedTypeName = propertyName.ToPascalCase();
@@ -144,15 +142,28 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
             return nestedTypeName;
         }
 
-        if (propertyValue.ValueKind == JsonValueKind.Array &&
-            propertyValue.EnumerateArray().Any() &&
-            propertyValue[0].ValueKind == JsonValueKind.Object)
+        if (propertyValue.ValueKind == JsonValueKind.Array)
         {
-            var nestedTypeName = propertyName.ToPascalCase();
-            addNestedTypeAction(propertyValue[0], nestedTypeName, declarations, options);
-            return FormatArrayType(nestedTypeName, options.ArrayType);
+            var elements = propertyValue.EnumerateArray().ToList();
+            if (elements.Count > 0)
+            {
+                var nonNullElements = elements
+                    .Where(e => e.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
+                    .ToList();
+
+                if (nonNullElements.Count > 0 && nonNullElements.All(e => e.ValueKind == JsonValueKind.Object))
+                {
+                    var nestedTypeName = propertyName.ToPascalCase();
+                    addNestedTypeAction(nonNullElements[0], nestedTypeName, declarations, options);
+                    var elementType = elements.Count != nonNullElements.Count
+                        ? MakeNullableType(nestedTypeName)
+                        : nestedTypeName;
+                    return FormatArrayType(elementType, options.ArrayType);
+                }
+            }
         }
 
+        string propertyType = DeterminePropertyType(propertyValue, propertyName, options.ArrayType);
         return propertyType;
     }
 
@@ -160,7 +171,7 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
     {
         return value.ValueKind switch
         {
-            JsonValueKind.Number => value.TryGetInt32(out _) ? "int" : "double",
+            JsonValueKind.Number => DetermineNumberType(value),
             JsonValueKind.String => DateTime.TryParse(value.GetString(), out _) ? "DateTime" : "string",
             JsonValueKind.True or JsonValueKind.False => "bool",
             JsonValueKind.Array => DetermineArrayType(value, propertyName, arrayType),
@@ -169,14 +180,25 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
         };
     }
 
-    private string GetDefaultValue(string propertyType)
+    private static string DetermineNumberType(JsonElement value)
+    {
+        if (value.TryGetInt32(out _))
+            return "int";
+
+        if (value.TryGetInt64(out _))
+            return "long";
+
+        return "double";
+    }
+
+    private static string GetDefaultValue(string propertyType)
     {
         return propertyType switch
         {
             "string" => "string.Empty",
             "object" => "new()",
             "DateTime" => string.Empty,
-            "int" or "double" or "bool" => string.Empty,
+            "int" or "long" or "double" or "bool" => string.Empty,
             var type when type.StartsWith("IReadOnlyList") || type.StartsWith("List") || type.EndsWith("[]") => "[]",
             var type when !type.Contains("?") => "new()",
             _ => string.Empty
@@ -185,23 +207,70 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
 
     private string DetermineArrayType(JsonElement array, string propertyName, ArrayType arrayType)
     {
+        var elements = array.EnumerateArray().ToList();
+        var nonNullElements = elements
+            .Where(e => e.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
+            .ToList();
+        var hasNulls = nonNullElements.Count != elements.Count;
+
+        if (nonNullElements.Count == 0)
+        {
+            var fallbackType = hasNulls ? "object?" : "object";
+            return FormatArrayType(fallbackType, arrayType);
+        }
+
+        var elementTypes = new List<string>();
+        foreach (var element in nonNullElements)
+        {
+            if (element.ValueKind == JsonValueKind.Object)
+            {
+                elementTypes.Add("object");
+                continue;
+            }
+
+            elementTypes.Add(DeterminePropertyType(element, propertyName, arrayType));
+        }
+
+        var distinct = elementTypes.Distinct().ToList();
         string elementType;
 
-        if (!array.EnumerateArray().Any())
+        if (distinct.Count == 1)
         {
-            elementType = "object";
+            elementType = distinct[0];
+        }
+        else if (AllNumeric(distinct))
+        {
+            elementType = PromoteNumeric(distinct);
         }
         else
         {
-            var elementTypes = array.EnumerateArray()
-                .Select(element => DeterminePropertyType(element, propertyName, arrayType))
-                .Distinct()
-                .ToList();
-
-            elementType = elementTypes.Count == 1 ? elementTypes.First() : "object";
+            elementType = "object";
         }
 
+        if (hasNulls)
+            elementType = MakeNullableType(elementType);
+
         return FormatArrayType(elementType, arrayType);
+    }
+
+    private static bool AllNumeric(IEnumerable<string> types)
+        => types.All(t => t is "int" or "long" or "double");
+
+    private static string PromoteNumeric(IReadOnlyList<string> types)
+    {
+        if (types.Contains("double"))
+            return "double";
+        if (types.Contains("long"))
+            return "long";
+        return "int";
+    }
+
+    private static string MakeNullableType(string typeName)
+    {
+        if (typeName.EndsWith("?", StringComparison.Ordinal))
+            return typeName;
+
+        return $"{typeName}?";
     }
 
     private string FormatArrayType(string elementType, ArrayType arrayType)

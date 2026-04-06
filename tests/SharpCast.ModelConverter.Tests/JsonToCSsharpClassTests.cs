@@ -111,6 +111,56 @@ public class JsonToCSsharpClassTests
     }
 
     [Fact]
+    public void ConvertJsonToClass_ArrayWithNulls_UsesNullableElementType()
+    {
+        string json = @"{
+            ""values"": [1, null, 2]
+        }";
+
+        _converter.TryConvert(json, _defaultOptions, out var result);
+
+        Assert.Contains("public IReadOnlyList<int?> Values", result);
+    }
+
+    [Fact]
+    public void ConvertJsonToClass_ArrayWithMixedNumericTypes_PromotesToDouble()
+    {
+        string json = @"{
+            ""values"": [1, 2.5]
+        }";
+
+        _converter.TryConvert(json, _defaultOptions, out var result);
+
+        Assert.Contains("public IReadOnlyList<double> Values", result);
+    }
+
+    [Fact]
+    public void ConvertJsonToClass_ArrayWithNullFirstObject_StillCreatesNestedClass()
+    {
+        string json = @"{
+            ""items"": [null, { ""id"": 1 }]
+        }";
+
+        _converter.TryConvert(json, _defaultOptions, out var result);
+
+        Assert.Contains("public IReadOnlyList<Items?> Items", result);
+        Assert.Contains("public class Items", result);
+        Assert.Contains("public int Id", result);
+    }
+
+    [Fact]
+    public void ConvertJsonToClass_LargeInteger_UsesLong()
+    {
+        string json = @"{
+            ""id"": 2147483648
+        }";
+
+        _converter.TryConvert(json, _defaultOptions, out var result);
+
+        Assert.Contains("public long Id", result);
+    }
+
+    [Fact]
     public void ConvertJsonToClass_MixedArray_ReturnsObjectType()
     {
 

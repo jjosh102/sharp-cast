@@ -104,7 +104,7 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
             for (int i = 0; i < iface.Properties.Count; i++)
             {
                 var prop = iface.Properties[i];
-                var mapped = MapTsType(prop.Type, prop.IsOptional, options.ArrayType);
+                var mapped = ApplyNullability(MapTsType(prop.Type, prop.IsOptional, options.ArrayType), options);
                 var csharpName = prop.Name.ToPascalCase().EnsureValidPropertyName();
                 var separator = i == iface.Properties.Count - 1 ? string.Empty : ",";
 
@@ -139,7 +139,7 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
     private static void EmitProperty(StringBuilder sb, TsProperty prop, ConversionOptions options, int indent)
     {
         var indentStr = new string(' ', indent * 4);
-        var mapped = MapTsType(prop.Type, prop.IsOptional, options.ArrayType);
+        var mapped = ApplyNullability(MapTsType(prop.Type, prop.IsOptional, options.ArrayType), options);
         var csharpName = prop.Name.ToPascalCase().EnsureValidPropertyName();
 
         if (options.AddAttribute)
@@ -151,7 +151,7 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
         }
 
         var accessors = options.PropertyAccess == PropertyAccess.Mutable ? "{ get; set; }" : "{ get; init; }";
-        var requiredKeyword = options.IsRequired ? "required " : string.Empty;
+        var requiredKeyword = options.IsRequired && !prop.IsOptional ? "required " : string.Empty;
         var initializer = string.Empty;
 
         if (options.IsDefaultInitialized && !mapped.IsNullable)
@@ -198,6 +198,11 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
         var normalized = NormalizedRegex().Replace(tsType, " ").Trim();
         normalized = StripReadonlyPrefix(normalized);
         var nullableByUnion = false;
+
+        if (IsNullish(normalized))
+        {
+            return new TypeMapping("object?", true);
+        }
 
         var unionParts = SplitTopLevel(normalized, '|');
         if (unionParts.Count > 1)
@@ -249,6 +254,8 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
             "number" => "double",
             "boolean" => "bool",
             "Date" => "DateTime",
+            "bigint" => "long",
+            "symbol" => "object",
             "any" or "unknown" or "object" => "object",
             _ => normalized
         };
@@ -327,7 +334,7 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
         var nullableSuffix = mapped.EndsWith("?", StringComparison.Ordinal) ? "?" : string.Empty;
         var core = nullableSuffix.Length == 0 ? mapped : mapped[..^1];
 
-        if (core is "string" or "double" or "bool" or "object" or "DateTime")
+        if (core is "string" or "double" or "bool" or "object" or "DateTime" or "long")
             return mapped;
 
         if (SimpleIdentifierRegex().IsMatch(core))
@@ -338,6 +345,20 @@ public sealed partial class TypeScriptToCSharpConverter : IModelConverter<Conver
 
     private static bool IsGenericType(string tsType)
         => tsType.Contains('<') && tsType.Contains('>');
+
+    private static TypeMapping ApplyNullability(TypeMapping mapping, ConversionOptions options)
+    {
+        var type = mapping.Type;
+        var alreadyNullable = type.EndsWith("?", StringComparison.Ordinal);
+        var isNullable = mapping.IsNullable || options.IsNullable || alreadyNullable;
+
+        if (isNullable && !alreadyNullable)
+        {
+            type += "?";
+        }
+
+        return new TypeMapping(type, isNullable);
+    }
 
     private static bool TryParseArrayGenericType(string tsType, out string valueType)
     {

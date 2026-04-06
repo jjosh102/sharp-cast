@@ -64,7 +64,8 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
             foreach (var param in r.ParameterList.Parameters)
             {
                 var propNameRaw = param.Identifier.Text;
-                var propName = NormalizeIdentifierToken(propNameRaw);
+                var jsonName = TryGetJsonPropertyName(param.AttributeLists);
+                var propName = jsonName ?? NormalizeIdentifierToken(propNameRaw);
                 var (tsType, optional) = MapTypeSyntax(param.Type, typeParams);
                 EmitMember(sb, propName, tsType, optional);
             }
@@ -75,7 +76,8 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
         {
             var nameToken = prop.Identifier;
             var propNameRaw = nameToken.Text;
-            var propName = NormalizeIdentifierToken(propNameRaw);
+            var jsonName = TryGetJsonPropertyName(prop.AttributeLists);
+            var propName = jsonName ?? NormalizeIdentifierToken(propNameRaw);
             var (tsType, optional) = MapTypeSyntax(prop.Type, typeParams);
    
             if (IsNullable(prop.Type)) optional = true;
@@ -88,10 +90,11 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
                 continue;
 
             var fieldType = field.Declaration.Type;
+            var jsonName = TryGetJsonPropertyName(field.AttributeLists);
             foreach (var variable in field.Declaration.Variables)
             {
                 var propNameRaw = variable.Identifier.Text;
-                var propName = NormalizeIdentifierToken(propNameRaw);
+                var propName = jsonName ?? NormalizeIdentifierToken(propNameRaw);
                 var (tsType, optional) = MapTypeSyntax(fieldType, typeParams);
                 EmitMember(sb, propName, tsType, optional);
             }
@@ -151,6 +154,42 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
         }
 
         return true;
+    }
+
+    private static string? TryGetJsonPropertyName(SyntaxList<AttributeListSyntax> attributeLists)
+    {
+        foreach (var list in attributeLists)
+        {
+            foreach (var attr in list.Attributes)
+            {
+                if (!IsJsonPropertyNameAttribute(attr))
+                    continue;
+
+                if (TryGetFirstStringLiteral(attr) is { } value)
+                    return value;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsJsonPropertyNameAttribute(AttributeSyntax attribute)
+    {
+        var name = attribute.Name.ToString();
+        return name.EndsWith("JsonPropertyName", StringComparison.Ordinal) ||
+               name.EndsWith("JsonPropertyNameAttribute", StringComparison.Ordinal);
+    }
+
+    private static string? TryGetFirstStringLiteral(AttributeSyntax attribute)
+    {
+        var arg = attribute.ArgumentList?.Arguments.FirstOrDefault();
+        if (arg?.Expression is LiteralExpressionSyntax lit &&
+            lit.IsKind(SyntaxKind.StringLiteralExpression))
+        {
+            return lit.Token.ValueText;
+        }
+
+        return null;
     }
 
     private static (string TsType, bool Optional) MapTypeSyntax(TypeSyntax? typeSyntax, HashSet<string> parentTypeParameters)

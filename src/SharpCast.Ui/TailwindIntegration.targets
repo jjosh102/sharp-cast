@@ -10,7 +10,7 @@
     </PropertyGroup>
 
     <Target Name="DetectMusl">
-        <Exec Command="test -f /etc/alpine-release" IgnoreExitCode="true">
+        <Exec Condition="!$([MSBuild]::IsOSPlatform('Windows'))" Command="test -f /etc/alpine-release" IgnoreExitCode="true">
             <Output TaskParameter="ExitCode" PropertyName="AlpineLinuxExitCode" />
         </Exec>
         <PropertyGroup>

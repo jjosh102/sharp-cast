@@ -345,4 +345,25 @@ public class CSharpToTypeScriptTests
 
         Assert.Contains("Payload: any;", ts);
     }
+
+    [Fact]
+    public void Convert_JsonPropertyNameAttribute_UsesSerializedName()
+    {
+        string code = @"
+            using System.Text.Json.Serialization;
+
+            public class Person
+            {
+                [JsonPropertyName(""first_name"")]
+                public string FirstName { get; set; }
+            }
+
+            public record User([property: JsonPropertyName(""user-id"")] int UserId);
+        ";
+
+        _converter.TryConvert(code, out var ts);
+
+        Assert.Contains("first_name: string;", ts);
+        Assert.Contains("[\"user-id\"]: number;", ts);
+    }
 }
