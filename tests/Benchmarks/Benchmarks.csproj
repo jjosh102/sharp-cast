@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
-    <PackageReference Include="Humanizer" Version="3.0.1" />
+    <PackageReference Include="Humanizer" Version="3.0.10" />
   </ItemGroup>
 
 </Project>
