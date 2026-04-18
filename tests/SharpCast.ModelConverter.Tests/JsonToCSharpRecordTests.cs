@@ -187,9 +187,9 @@ public class JsonToCSharpRecordTests
         _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public record RootRecord", result);
-        Assert.Contains("[property: JsonPropertyName(\"type\")]", result);
-        Assert.Contains("[property: JsonPropertyName(\"id\")]", result);
-        Assert.Contains("[property: JsonPropertyName(\"price\")]", result);
+        Assert.Contains("[property: JsonPropertyName(\"@type\")]", result);
+        Assert.Contains("[property: JsonPropertyName(\"#id\")]", result);
+        Assert.Contains("[property: JsonPropertyName(\"$price\")]", result);
         Assert.Contains("string Type", result);
         Assert.Contains("int Id", result);
         Assert.Contains("double Price", result);
@@ -446,6 +446,27 @@ public class JsonToCSharpRecordTests
         Assert.DoesNotContain("= [];", result2);
         Assert.DoesNotContain("= new();", result2);
     }
+
+    [Fact]
+    public void ConvertJsonToRecord_ObjectArray_MergesPropertiesAcrossAllItems()
+    {
+        string json = @"{
+            ""items"": [
+                { ""id"": 1 },
+                { ""name"": ""alpha"", ""child"": { ""enabled"": true } },
+                { ""id"": 2, ""name"": null, ""child"": null }
+            ]
+        }";
+
+        _converter.TryConvert(json, _defaultOptions, out var result);
+
+        Assert.Contains("IReadOnlyList<Items> Items", result);
+        Assert.Contains("int? Id", result);
+        Assert.Contains("string? Name", result);
+        Assert.Contains("Child? Child", result);
+        Assert.Contains("public record Child", result);
+        Assert.Contains("bool Enabled", result);
+    }
     [Fact]
     public void ConvertJsonToRecord_ArrayType_RespectsSelectedArrayType()
     {
@@ -624,9 +645,9 @@ public class JsonToCSharpRecordTests
         _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public record RootRecord", result);
-        Assert.Contains("[property: JsonPropertyName(\"type\")]", result);
-        Assert.Contains("[property: JsonPropertyName(\"id\")]", result);
-        Assert.Contains("[property: JsonPropertyName(\"price\")]", result);
+        Assert.Contains("[property: JsonPropertyName(\"@type\")]", result);
+        Assert.Contains("[property: JsonPropertyName(\"#id\")]", result);
+        Assert.Contains("[property: JsonPropertyName(\"$price\")]", result);
         Assert.Contains("string Type", result);
         Assert.Contains("int Id", result);
         Assert.Contains("double Price", result);
@@ -811,9 +832,9 @@ public class JsonToCSharpRecordTests
 
         _converter.TryConvert(json, options, out var result);
 
-        Assert.Contains("[property: JsonPropertyName(\"type\")]", result);
-        Assert.Contains("[property: JsonPropertyName(\"id\")]", result);
-        Assert.Contains("[property: JsonPropertyName(\"value\")]", result);
+        Assert.Contains("[property: JsonPropertyName(\"@type\")]", result);
+        Assert.Contains("[property: JsonPropertyName(\"#id\")]", result);
+        Assert.Contains("[property: JsonPropertyName(\"$value\")]", result);
         Assert.Contains("string Type", result);
         Assert.Contains("int Id", result);
         Assert.Contains("double Value", result);
@@ -887,8 +908,8 @@ public class JsonToCSharpRecordTests
 
         _converter.TryConvert(json, options, out var result);
 
-        Assert.Contains("[property: JsonPropertyName(\"email\")]", result);
-        Assert.Contains("[property: JsonPropertyName(\"roles\")]", result);
+        Assert.Contains("[property: JsonPropertyName(\"@email\")]", result);
+        Assert.Contains("[property: JsonPropertyName(\"!roles\")]", result);
         Assert.Contains("public record User", result);
         Assert.Contains("string Email", result);
         Assert.Contains("IReadOnlyList<string> Roles", result);

@@ -52,11 +52,16 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
     private void EmitType(TypeDeclarationSyntax typeDecl, StringBuilder sb)
     {
         var typeName = typeDecl.Identifier.Text;
-        sb.AppendLine($"export interface {typeName} {{");
+        var typeParameterNames = typeDecl.TypeParameterList?.Parameters
+            .Select(p => p.Identifier.Text)
+            .ToList() ?? [];
+        var typeParameterSuffix = typeParameterNames.Count > 0
+            ? $"<{string.Join(", ", typeParameterNames)}>"
+            : string.Empty;
 
-        var typeParams = typeDecl is TypeDeclarationSyntax tds && tds.TypeParameterList != null
-            ? tds.TypeParameterList.Parameters.Select(p => p.Identifier.Text).ToHashSet(StringComparer.Ordinal)
-            : [];
+        sb.AppendLine($"export interface {typeName}{typeParameterSuffix} {{");
+
+        var typeParams = typeParameterNames.ToHashSet(StringComparer.Ordinal);
 
  
         if (typeDecl is RecordDeclarationSyntax r && r.ParameterList != null)
@@ -216,7 +221,7 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
         {
             var id = idName.Identifier.Text;
             if (parentTypeParameters.Contains(id))
-                return ("any", false);
+                return (id, false);
 
             return (MapKnownSimpleType(id), false);
         }
@@ -236,14 +241,6 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
         {
             var identifier = gen.Identifier.Text;
             var args = gen.TypeArgumentList.Arguments;
-            var argNames = args.Select(a => a.ToString().Trim()).ToList();
-            if (argNames.Any(n => parentTypeParameters.Contains(n)))
-            {
-                if (args.Count == 1)
-                    return ("any[]", false);
-
-                return ("any", false);
-            }
 
             if (identifier.Equals("List", StringComparison.Ordinal) ||
                 identifier.Equals("IReadOnlyList", StringComparison.Ordinal) ||

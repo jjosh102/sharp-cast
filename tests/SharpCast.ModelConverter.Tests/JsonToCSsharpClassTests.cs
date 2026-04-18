@@ -149,6 +149,42 @@ public class JsonToCSsharpClassTests
     }
 
     [Fact]
+    public void ConvertJsonToClass_ObjectArray_MergesPropertiesAcrossAllItems()
+    {
+        string json = @"{
+            ""items"": [
+                { ""id"": 1 },
+                { ""name"": ""alpha"", ""child"": { ""enabled"": true } },
+                { ""id"": 2, ""name"": null, ""child"": null }
+            ]
+        }";
+
+        _converter.TryConvert(json, _defaultOptions, out var result);
+
+        Assert.Contains("public IReadOnlyList<Items> Items", result);
+        Assert.Contains("public int? Id", result);
+        Assert.Contains("public string? Name", result);
+        Assert.Contains("public Child? Child", result);
+        Assert.Contains("public class Child", result);
+        Assert.Contains("public bool Enabled", result);
+    }
+
+    [Fact]
+    public void ConvertJsonToClass_CollectionRootWithLeadingNull_UsesFirstObjectShape()
+    {
+        string json = @"[
+            null,
+            { ""name"": ""John"", ""age"": 30 }
+        ]";
+
+        _converter.TryConvert(json, _defaultOptions, out var result);
+
+        Assert.Contains("public class RootClass", result);
+        Assert.Contains("public string Name", result);
+        Assert.Contains("public int Age", result);
+    }
+
+    [Fact]
     public void ConvertJsonToClass_LargeInteger_UsesLong()
     {
         string json = @"{
@@ -315,6 +351,26 @@ public class JsonToCSsharpClassTests
         _converter.TryConvert(json, options, out var result2);
         Assert.Contains("public required string Name { get; init; }", result2);
         Assert.Contains("public required int Age { get; init; }", result2);
+    }
+
+    [Fact]
+    public void ConvertJsonToClass_GlobalNullable_DoesNotDuplicateNullableSuffix()
+    {
+        string json = @"{
+            ""values"": [1, null, 2]
+        }";
+
+        var options = new ConversionOptions
+        {
+            Namespace = "TestNamespace",
+            UseRecords = false,
+            IsNullable = true
+        };
+
+        _converter.TryConvert(json, options, out var result);
+
+        Assert.Contains("public IReadOnlyList<int?>? Values", result);
+        Assert.DoesNotContain("??", result);
     }
 
     [Fact]
@@ -542,9 +598,9 @@ public class JsonToCSsharpClassTests
         _converter.TryConvert(json, _defaultOptions, out var result);
 
         Assert.Contains("public class RootClass", result);
-        Assert.Contains("[JsonPropertyName(\"type\")]", result);
-        Assert.Contains("[JsonPropertyName(\"id\")]", result);
-        Assert.Contains("[JsonPropertyName(\"price\")]", result);
+        Assert.Contains("[JsonPropertyName(\"@type\")]", result);
+        Assert.Contains("[JsonPropertyName(\"#id\")]", result);
+        Assert.Contains("[JsonPropertyName(\"$price\")]", result);
         Assert.Contains("public string Type", result);
         Assert.Contains("public int Id", result);
         Assert.Contains("public double Price", result);
@@ -684,9 +740,9 @@ public class JsonToCSsharpClassTests
 
         _converter.TryConvert(json, options, out var result);
 
-        Assert.Contains("[JsonPropertyName(\"type\")]", result);
-        Assert.Contains("[JsonPropertyName(\"id\")]", result);
-        Assert.Contains("[JsonPropertyName(\"value\")]", result);
+        Assert.Contains("[JsonPropertyName(\"@type\")]", result);
+        Assert.Contains("[JsonPropertyName(\"#id\")]", result);
+        Assert.Contains("[JsonPropertyName(\"$value\")]", result);
         Assert.Contains("public string Type", result);
         Assert.Contains("public int Id", result);
         Assert.Contains("public double Value", result);
@@ -734,8 +790,8 @@ public class JsonToCSsharpClassTests
 
         _converter.TryConvert(json, options, out var result);
 
-        Assert.Contains("[JsonPropertyName(\"email\")]", result);
-        Assert.Contains("[JsonPropertyName(\"roles\")]", result);
+        Assert.Contains("[JsonPropertyName(\"@email\")]", result);
+        Assert.Contains("[JsonPropertyName(\"!roles\")]", result);
         Assert.Contains("public string Email", result);
         Assert.Contains("public IReadOnlyList<string> Roles", result);
     }

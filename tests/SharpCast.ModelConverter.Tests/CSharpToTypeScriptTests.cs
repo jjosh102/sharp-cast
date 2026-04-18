@@ -206,7 +206,7 @@ public class CSharpToTypeScriptTests
     // }
 
     [Fact]
-    public void Convert_GenericType_IgnoredAndReplacedWithAny()
+    public void Convert_GenericType_PreservesTypeParameter()
     {
         string code = @"
             public class Wrapper<T>
@@ -217,7 +217,26 @@ public class CSharpToTypeScriptTests
 
         _converter.TryConvert(code,  out var ts);
 
-        Assert.Contains("Value: any;", ts);
+        Assert.Contains("export interface Wrapper<T>", ts);
+        Assert.Contains("Value: T;", ts);
+    }
+
+    [Fact]
+    public void Convert_GenericCollections_PreserveTypeParameters()
+    {
+        string code = @"
+            public class Wrapper<T>
+            {
+                public List<T> Items { get; set; }
+                public Dictionary<string, T> Lookup { get; set; }
+            }
+        ";
+
+        _converter.TryConvert(code, out var ts);
+
+        Assert.Contains("export interface Wrapper<T>", ts);
+        Assert.Contains("Items: T[];", ts);
+        Assert.Contains("Lookup: Record<string, T>;", ts);
     }
 
     [Fact]

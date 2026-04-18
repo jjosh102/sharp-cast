@@ -8,6 +8,8 @@ namespace SharpCast.ModelConverter;
 
 public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
 {
+    private sealed record MergedJsonProperty(string Name, IReadOnlyList<JsonElement> Values, bool IsNullable);
+
     public bool TryConvert(string json, ConversionOptions options, out string csharpCode)
 
     {
@@ -31,15 +33,25 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
 
             if (root.ValueKind == JsonValueKind.Array)
             {
-                if (root.GetArrayLength() == 0)
+                var elements = root.EnumerateArray().ToList();
+                if (elements.Count == 0)
                     throw new InvalidOperationException("JSON array is empty. Cannot convert to C# POCO.");
 
-                root = root[0];
+                var nonNullElements = elements
+                    .Where(e => e.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
+                    .ToList();
 
-                if (root.ValueKind != JsonValueKind.Object)
-                    throw new InvalidOperationException("First element in JSON array must be an object.");
+                if (nonNullElements.Count == 0)
+                    throw new InvalidOperationException("JSON array does not contain an object to convert.");
+
+                if (nonNullElements.Any(e => e.ValueKind != JsonValueKind.Object))
+                    throw new InvalidOperationException("JSON root must be an object or array of objects.");
+
+                csharpCode = BuildFromJsonObjects(nonNullElements, options);
+                return true;
             }
-            else if (root.ValueKind != JsonValueKind.Object)
+
+            if (root.ValueKind != JsonValueKind.Object)
             {
                 throw new InvalidOperationException("JSON root must be an object or array of objects.");
             }
@@ -62,7 +74,18 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
     {
         var declarations = new List<MemberDeclarationSyntax>();
         AddTypeFromJson(rootElement, options.RootTypeName, declarations, options);
+        return BuildCompilationUnit(declarations, options);
+    }
 
+    private string BuildFromJsonObjects(IReadOnlyList<JsonElement> rootObjects, ConversionOptions options)
+    {
+        var declarations = new List<MemberDeclarationSyntax>();
+        AddTypeFromJsonObjects(rootObjects, options.RootTypeName, declarations, options);
+        return BuildCompilationUnit(declarations, options);
+    }
+
+    private string BuildCompilationUnit(List<MemberDeclarationSyntax> declarations, ConversionOptions options)
+    {
         BaseNamespaceDeclarationSyntax namespaceDeclaration = options.UseFileScoped
             ? SyntaxFactory.FileScopedNamespaceDeclaration(SyntaxFactory.ParseName(options.Namespace))
             : SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(options.Namespace))
@@ -129,6 +152,52 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
         declarations.Add(typeDeclaration);
     }
 
+    private void AddTypeFromJsonObjects(IReadOnlyList<JsonElement> jsonObjects,
+        string typeName,
+        List<MemberDeclarationSyntax> declarations,
+        ConversionOptions options)
+    {
+        typeName = typeName.EnsureValidPropertyName();
+
+        MemberDeclarationSyntax typeDeclaration;
+
+        if (!options.UseRecords)
+        {
+            var classDeclaration = SyntaxFactory.ClassDeclaration(typeName)
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
+
+            var members = CreatePropertiesFromJsonObjects(jsonObjects, declarations, options);
+            classDeclaration = classDeclaration.AddMembers([.. members]);
+
+            typeDeclaration = classDeclaration;
+        }
+        else
+        {
+            var recordDeclaration = SyntaxFactory.RecordDeclaration(SyntaxFactory.Token(SyntaxKind.RecordKeyword), typeName)
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
+
+            if (options.UsePrimaryConstructor)
+            {
+                var parameters = CreateParametersFromJsonObjects(jsonObjects, declarations, options);
+                recordDeclaration = recordDeclaration
+                    .AddParameterListParameters([.. parameters])
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+            }
+            else
+            {
+                var members = CreatePropertiesFromJsonObjects(jsonObjects, declarations, options);
+                recordDeclaration = recordDeclaration
+                    .WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
+                    .AddMembers([.. members])
+                    .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken));
+            }
+
+            typeDeclaration = recordDeclaration;
+        }
+
+        declarations.Add(typeDeclaration);
+    }
+
     private string HandlePropertyType(JsonElement propertyValue,
         string propertyName,
         List<MemberDeclarationSyntax> declarations,
@@ -142,42 +211,24 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
             return nestedTypeName;
         }
 
-        if (propertyValue.ValueKind == JsonValueKind.Array)
-        {
-            var elements = propertyValue.EnumerateArray().ToList();
-            if (elements.Count > 0)
-            {
-                var nonNullElements = elements
-                    .Where(e => e.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
-                    .ToList();
-
-                if (nonNullElements.Count > 0 && nonNullElements.All(e => e.ValueKind == JsonValueKind.Object))
-                {
-                    var nestedTypeName = propertyName.ToPascalCase();
-                    addNestedTypeAction(nonNullElements[0], nestedTypeName, declarations, options);
-                    var elementType = elements.Count != nonNullElements.Count
-                        ? MakeNullableType(nestedTypeName)
-                        : nestedTypeName;
-                    return FormatArrayType(elementType, options.ArrayType);
-                }
-            }
-        }
-
-        string propertyType = DeterminePropertyType(propertyValue, propertyName, options.ArrayType);
-        return propertyType;
+        return DeterminePropertyType(propertyValue, propertyName, declarations, options);
     }
 
-    private string DeterminePropertyType(JsonElement value, string propertyName, ArrayType arrayType)
+    private string DeterminePropertyType(
+        JsonElement value,
+        string propertyName,
+        List<MemberDeclarationSyntax> declarations,
+        ConversionOptions options)
     {
         return value.ValueKind switch
-        {
-            JsonValueKind.Number => DetermineNumberType(value),
-            JsonValueKind.String => DateTime.TryParse(value.GetString(), out _) ? "DateTime" : "string",
-            JsonValueKind.True or JsonValueKind.False => "bool",
-            JsonValueKind.Array => DetermineArrayType(value, propertyName, arrayType),
-            JsonValueKind.Object => propertyName.ToPascalCase(),
-            _ => "object"
-        };
+            {
+                JsonValueKind.Number => DetermineNumberType(value),
+                JsonValueKind.String => DateTime.TryParse(value.GetString(), out _) ? "DateTime" : "string",
+                JsonValueKind.True or JsonValueKind.False => "bool",
+                JsonValueKind.Array => DetermineMergedArrayType([value], propertyName, declarations, options),
+                JsonValueKind.Object => propertyName.ToPascalCase(),
+                _ => "object"
+            };
     }
 
     private static string DetermineNumberType(JsonElement value)
@@ -205,9 +256,15 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
         };
     }
 
-    private string DetermineArrayType(JsonElement array, string propertyName, ArrayType arrayType)
+    private string DetermineMergedArrayType(
+        IReadOnlyList<JsonElement> arrays,
+        string propertyName,
+        List<MemberDeclarationSyntax> declarations,
+        ConversionOptions options)
     {
-        var elements = array.EnumerateArray().ToList();
+        var elements = arrays
+            .SelectMany(array => array.EnumerateArray())
+            .ToList();
         var nonNullElements = elements
             .Where(e => e.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
             .ToList();
@@ -216,45 +273,51 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
         if (nonNullElements.Count == 0)
         {
             var fallbackType = hasNulls ? "object?" : "object";
-            return FormatArrayType(fallbackType, arrayType);
+            return FormatArrayType(fallbackType, options.ArrayType);
         }
 
-        var elementTypes = new List<string>();
-        foreach (var element in nonNullElements)
-        {
-            if (element.ValueKind == JsonValueKind.Object)
-            {
-                elementTypes.Add("object");
-                continue;
-            }
-
-            elementTypes.Add(DeterminePropertyType(element, propertyName, arrayType));
-        }
-
-        var distinct = elementTypes.Distinct().ToList();
-        string elementType;
-
-        if (distinct.Count == 1)
-        {
-            elementType = distinct[0];
-        }
-        else if (AllNumeric(distinct))
-        {
-            elementType = PromoteNumeric(distinct);
-        }
-        else
-        {
-            elementType = "object";
-        }
+        var elementType = DetermineCompositeType(nonNullElements, propertyName, declarations, options);
 
         if (hasNulls)
             elementType = MakeNullableType(elementType);
 
-        return FormatArrayType(elementType, arrayType);
+        return FormatArrayType(elementType, options.ArrayType);
     }
 
-    private static bool AllNumeric(IEnumerable<string> types)
-        => types.All(t => t is "int" or "long" or "double");
+    private string DetermineCompositeType(
+        IReadOnlyList<JsonElement> values,
+        string propertyName,
+        List<MemberDeclarationSyntax> declarations,
+        ConversionOptions options)
+    {
+        var nonNullValues = values
+            .Where(v => v.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
+            .ToList();
+
+        if (nonNullValues.Count == 0)
+            return "object";
+
+        if (nonNullValues.All(v => v.ValueKind == JsonValueKind.Object))
+        {
+            var nestedTypeName = propertyName.ToPascalCase();
+            AddTypeFromJsonObjects(nonNullValues, nestedTypeName, declarations, options);
+            return nestedTypeName;
+        }
+
+        if (nonNullValues.All(v => v.ValueKind == JsonValueKind.Array))
+            return DetermineMergedArrayType(nonNullValues, propertyName, declarations, options);
+
+        if (nonNullValues.All(v => v.ValueKind == JsonValueKind.Number))
+            return PromoteNumeric(nonNullValues.Select(DetermineNumberType).Distinct().ToList());
+
+        if (nonNullValues.All(v => v.ValueKind is JsonValueKind.True or JsonValueKind.False))
+            return "bool";
+
+        if (nonNullValues.All(v => v.ValueKind == JsonValueKind.String))
+            return nonNullValues.All(v => DateTime.TryParse(v.GetString(), out _)) ? "DateTime" : "string";
+
+        return "object";
+    }
 
     private static string PromoteNumeric(IReadOnlyList<string> types)
     {
@@ -288,7 +351,7 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
     {
         if (options.IsNullable && !options.IsDefaultInitialized)
         {
-            propertyType += "?";
+            propertyType = MakeNullableType(propertyType);
         }
 
         var accessors = GenerateAccessors(options);
@@ -347,7 +410,7 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
     private AttributeSyntax CreateJsonPropertyNameAttribute(string propertyName)
     {
         var argument = SyntaxFactory.AttributeArgument(
-            SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(propertyName.RemoveSpecialCharacters())));
+            SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(propertyName)));
 
         return SyntaxFactory.Attribute(SyntaxFactory.ParseName("JsonPropertyName")).AddArgumentListArguments(argument);
     }
@@ -356,7 +419,7 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
     {
         if (options.IsNullable)
         {
-            propertyType += "?";
+            propertyType = MakeNullableType(propertyType);
         }
 
         var parameterDeclaration = SyntaxFactory.Parameter(
@@ -372,7 +435,7 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
                    SyntaxFactory.AttributeArgument(
                        SyntaxFactory.LiteralExpression(
                            SyntaxKind.StringLiteralExpression,
-                           SyntaxFactory.Literal(propertyName.RemoveSpecialCharacters()))));
+                           SyntaxFactory.Literal(propertyName))));
 
         var attributeList = SyntaxFactory.AttributeList(
             SyntaxFactory.SingletonSeparatedList(attribute));
@@ -395,6 +458,26 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
         return parameters;
     }
 
+    private List<ParameterSyntax> CreateParametersFromJsonObjects(
+        IReadOnlyList<JsonElement> jsonObjects,
+        List<MemberDeclarationSyntax> declarations,
+        ConversionOptions options)
+    {
+        var parameters = new List<ParameterSyntax>();
+
+        foreach (var property in MergeObjectProperties(jsonObjects))
+        {
+            var propertyType = DetermineCompositeType(property.Values, property.Name, declarations, options);
+            if (property.IsNullable)
+                propertyType = MakeNullableType(propertyType);
+
+            var parameter = GenerateRecordParameter(property.Name, propertyType, options);
+            parameters.Add(parameter);
+        }
+
+        return parameters;
+    }
+
     private List<MemberDeclarationSyntax> CreatePropertiesFromJson(JsonElement jsonObject,
         List<MemberDeclarationSyntax> declarations, ConversionOptions options)
     {
@@ -408,5 +491,58 @@ public class JsonToCSharpConverter : IModelConverter<ConversionOptions>
         }
 
         return properties;
+    }
+
+    private List<MemberDeclarationSyntax> CreatePropertiesFromJsonObjects(
+        IReadOnlyList<JsonElement> jsonObjects,
+        List<MemberDeclarationSyntax> declarations,
+        ConversionOptions options)
+    {
+        var properties = new List<MemberDeclarationSyntax>();
+
+        foreach (var property in MergeObjectProperties(jsonObjects))
+        {
+            var propertyType = DetermineCompositeType(property.Values, property.Name, declarations, options);
+            if (property.IsNullable)
+                propertyType = MakeNullableType(propertyType);
+
+            var propertyDeclaration = GenerateClassProperty(property.Name, propertyType, options);
+            properties.Add(propertyDeclaration);
+        }
+
+        return properties;
+    }
+
+    private static List<MergedJsonProperty> MergeObjectProperties(IReadOnlyList<JsonElement> jsonObjects)
+    {
+        var order = new List<string>();
+        var valuesByName = new Dictionary<string, List<JsonElement>>(StringComparer.Ordinal);
+        var presenceByName = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        foreach (var jsonObject in jsonObjects)
+        {
+            foreach (var property in jsonObject.EnumerateObject())
+            {
+                if (!valuesByName.TryGetValue(property.Name, out var values))
+                {
+                    values = [];
+                    valuesByName[property.Name] = values;
+                    order.Add(property.Name);
+                }
+
+                values.Add(property.Value);
+                presenceByName[property.Name] = presenceByName.GetValueOrDefault(property.Name) + 1;
+            }
+        }
+
+        return order
+            .Select(name =>
+            {
+                var values = valuesByName[name];
+                var hasNulls = values.Any(v => v.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined);
+                var isNullable = hasNulls || presenceByName[name] != jsonObjects.Count;
+                return new MergedJsonProperty(name, values, isNullable);
+            })
+            .ToList();
     }
 }
