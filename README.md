@@ -1,25 +1,65 @@
 # Sharp Cast
 
-Sharp Cast is a small .NET library that converts between JSON, C#, and TypeScript models. It is designed for quick schema translation and code generation in tools and apps.
+Sharp Cast is a free web tool for developers who want a quick way to convert models between JSON, C#, and TypeScript.
+It is meant for the very normal "I have this model in one format and need it in another one" moment. Paste your input, pick the conversion you want, adjust a few settings if needed, and get the result in the browser.
 
-## Supported conversions
+## What Sharp Cast does
 
-- Json -> CSharp
-- Json -> TypeScript
-- CSharp -> Json
-- CSharp -> TypeScript
-- TypeScript -> CSharp
-- TypeScript -> Json
+- Convert `JSON -> C#`
+- Convert `JSON -> TypeScript`
+- Convert `C# -> JSON`
+- Convert `C# -> TypeScript`
+- Convert `TypeScript -> C#`
+- Convert `TypeScript -> JSON`
 
-## Install
+## Web app highlights
 
-This repo contains the library and tests. Add the project reference from your solution:
+- Blazor WebAssembly app with an in-browser editor
+- Easy switching between input and output formats
+- C# model generation settings when you need them
+- Saved editor content and settings in local storage
+- Last output snapshot so you can reopen recent results
+- File upload support for source input
+
+## C# generation options
+
+When converting into C#, Sharp Cast supports options such as:
+
+- `Namespace`
+- `RootTypeName`
+- `UseRecords`
+- `UsePrimaryConstructor`
+- `PropertyAccess`
+- `ArrayType`
+- `AddAttribute`
+- `IsNullable`
+- `IsRequired`
+- `IsDefaultInitialized`
+- `UseFileScoped`
+
+## Project structure
+
+- `src/SharpCast.Ui`: the web tool
+- `src/SharpCast.ModelConverter`: the converter logic used by the app
+- `tests/SharpCast.ModelConverter.Tests`: converter test coverage
+
+## Run locally
+
+Run the web app locally with:
+
+```bash
+dotnet run --project src/SharpCast.Ui/SharpCast.Ui.csproj
+```
+
+If you want to use the converter logic inside another .NET project, add a project reference:
 
 ```bash
 dotnet add <YourProject>.csproj reference src/SharpCast.ModelConverter/SharpCast.ModelConverter.csproj
 ```
 
-## Quick start
+## Library example
+
+The repo also includes the reusable converter library that powers the app:
 
 ```csharp
 using System.Text.Json;
@@ -38,9 +78,6 @@ var options = new ConversionOptions
 var jsonToCsharp = new JsonToCSharpConverter();
 jsonToCsharp.TryConvert("{ \"name\": \"Ada\", \"age\": 30 }", options, out var csharpCode);
 
-var tsToCsharp = new TypeScriptToCSharpConverter();
-tsToCsharp.TryConvert("interface Person { name: string; age?: number; }", options, out var csharpFromTs);
-
 var csharpToTs = new CSharpToTypeScriptConverter();
 csharpToTs.TryConvert("public class Person { public string Name { get; set; } }", out var tsCode);
 
@@ -48,29 +85,8 @@ var csharpToJson = new CSharpToJsonConverter();
 csharpToJson.TryConvert(csharpCode, new JsonSerializerOptions { WriteIndented = true }, out var jsonSchema);
 ```
 
-## Conversion options
-
-These apply to `JsonToCSharpConverter` and `TypeScriptToCSharpConverter`:
-
-- `Namespace`: Namespace for generated types.
-- `RootTypeName`: Root type name for JSON conversion.
-- `UseRecords`: Generate records instead of classes.
-- `UsePrimaryConstructor`: Use primary constructors for records.
-- `PropertyAccess`: `Immutable` (`get; init;`) or `Mutable` (`get; set;`).
-- `ArrayType`: `IReadOnlyList`, `List`, or `Array`.
-- `AddAttribute`: Add `JsonPropertyName` attributes.
-- `IsNullable`: Emit nullable properties.
-- `IsRequired`: Emit `required` properties.
-- `IsDefaultInitialized`: Add default initializers for non-nullable properties.
-- `UseFileScoped`: Use file-scoped namespaces.
-
-## Notes
-
-- `CSharpToJsonConverter` emits a JSON schema-like structure using sample values.
-- `CSharpToTypeScriptConverter` produces TypeScript interfaces from public members.
-
 ## Tests
 
 ```bash
-dotnet test sharp-cast.sln -c Debug
+dotnet test tests/SharpCast.ModelConverter.Tests/SharpCast.ModelConverter.Tests.csproj -c Debug --no-restore
 ```
