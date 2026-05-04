@@ -9,6 +9,6 @@
   <ItemGroup>
     <PackageReference Include="Humanizer" Version="3.0.10" />
     <PackageReference Include="Microsoft.CodeAnalysis" Version="5.3.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
   </ItemGroup>
 </Project>
