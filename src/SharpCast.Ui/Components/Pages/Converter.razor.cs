@@ -10,6 +10,8 @@ using Blazored.LocalStorage;
 using SharpCast.Ui.Models;
 using SharpCast.Ui.Resources;
 using SharpCast.Ui.Shared;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis;
 
 namespace SharpCast.Ui.Components.Pages;
 
@@ -114,6 +116,13 @@ public partial class Converter : ComponentBase
         _outputFormat = savedRoute.OutputFormat;
     }
 
+    private async Task ResetSettingsAsync()
+    {
+        _conversionOptions = new ConversionOptions();
+        OnSettingsChanged();
+        await ShowToastAsync("Settings reset to defaults", ToastType.Success, durationMs: 2000);
+    }
+
     private void OnSettingsChanged()
     {
         if (!AppState.Preferences.IsSettingsSaved)
@@ -213,10 +222,76 @@ public partial class Converter : ComponentBase
             .SetItemAsync(Constants.LastConversionOutput, _lastSnapshot);
     }
 
+    private async Task FormatInputAsync()
+    {
+        var input = await GetEditorValueSafe(_inputEditor);
+        if (string.IsNullOrWhiteSpace(input)) return;
+
+        string formatted;
+        try
+        {
+            formatted = _inputFormat switch
+            {
+                CodeFormat.Json => FormatJson(input),
+                CodeFormat.CSharp => FormatCSharp(input),
+                _ => await TriggerMonacoFormatAsync() ?? input
+            };
+        }
+        catch
+        {
+            await ShowToastAsync("Failed to format input", ToastType.Warning);
+            return;
+        }
+
+        if (formatted != input)
+        {
+            await SetEditorValueSafe(_inputEditor, formatted);
+            await ShowToastAsync("Formatted", ToastType.Success, durationMs: 1500);
+        }
+    }
+
+    private string FormatJson(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        return JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private string FormatCSharp(string csharp)
+    {
+        var tree = CSharpSyntaxTree.ParseText(csharp);
+        return tree.GetRoot().NormalizeWhitespace().ToFullString();
+    }
+
+    private async Task<string?> TriggerMonacoFormatAsync()
+    {
+        if (_inputEditor == null) return null;
+        await _inputEditor.Trigger("source", "editor.action.formatDocument");
+        return await _inputEditor.GetValue();
+    }
+
+    private async Task ClearInputAsync()
+    {
+        await SetEditorValueSafe(_inputEditor, string.Empty);
+        await SaveInputContent();
+    }
+
     private async Task OnInputChanged(ModelContentChangedEvent _)
     {
         if (_suppressInputSave)
             return;
+
+        var content = await GetEditorValueSafe(_inputEditor);
+        if (!string.IsNullOrWhiteSpace(content))
+        {
+            var detected = FormatUtility.GuessFormat(content);
+            if (detected.HasValue && detected.Value != _inputFormat)
+            {
+                _inputFormat = detected.Value;
+                await SetEditorLanguageSafe(_inputEditor, _inputFormat);
+                await SaveRoute();
+                StateHasChanged();
+            }
+        }
 
         await SaveInputContent();
     }
@@ -492,7 +567,7 @@ public partial class Converter : ComponentBase
     private static string? GetUnsupportedReason(CodeFormat from, CodeFormat to)
     {
         if (from == to)
-            return "Select different input and output formats.";
+            return "Select different input and format.";
 
         return (from, to) switch
         {
@@ -575,14 +650,6 @@ public partial class Converter : ComponentBase
 
     private static string GetText(string key, string fallback)
         => Localizer.ResourceManager.GetString(key, Localizer.Culture) ?? fallback;
-
-}
-
-public enum CodeFormat
-{
-    Json,
-    CSharp,
-    TypeScript
 }
 
 public sealed class ConversionSnapshot

@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 
 <div class="flex h-[calc(100dvh-88px)] min-h-[540px] w-full overflow-hidden border border-[#E7E7E7] dark:border-[#30363d] bg-[#fcfcfd] dark:bg-[#0d1117] lg:rounded-lg">
     @if (_showSidebar)
@@ -175,6 +175,16 @@
                         </div>
                     </div>
                 </details>
+
+                <div class="pt-4 mt-2 border-t border-gray-200 dark:border-[#30363d]">
+                    <button @onclick="ResetSettingsAsync"
+                            class="w-full py-2 px-3 text-[11px] font-bold rounded-md border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 transition flex items-center justify-center gap-2">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        @Localizer.ResourceManager.GetString("ResetSettings_Button", Localizer.Culture)
+                    </button>
+                </div>
             }
             else
             {
@@ -203,6 +213,23 @@
             </div>
 
             <div class="flex items-center gap-2">
+                <button @onclick="FormatInputAsync"
+                        class="h-8 px-3 text-[11px] font-bold rounded-md border border-gray-300 dark:border-[#30363d] bg-white dark:bg-[#0d1117] text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1f2937] transition flex items-center gap-1.5"
+                        title="Format Input (Alt+Shift+F)">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                    </svg>
+                    <span>@Localizer.ResourceManager.GetString("Format_Button", Localizer.Culture)</span>
+                </button>
+
+                <button @onclick="ClearInputAsync"
+                        class="h-8 px-3 text-[11px] font-bold rounded-md border border-gray-300 dark:border-[#30363d] bg-white dark:bg-[#0d1117] text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1f2937] transition flex items-center gap-1.5"
+                        title="Clear Input">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+
                 <FileUpload OnFileUploaded="HandleFileUpload" />
 
                 <button @onclick="ShowLastOutputAsync" disabled="@(!HasLastOutput)"
@@ -223,7 +250,8 @@
         </header>
 
         <main class="flex-1 min-h-0 relative bg-[#fffffe] dark:bg-[#1b1f23]">
-            <StandaloneCodeEditor @ref="_inputEditor" Id="input-editor" OnDidChangeModelContent="OnInputChanged"
+            <StandaloneCodeEditor @ref="_inputEditor" Id="input-editor" 
+                                  OnDidChangeModelContent="OnInputChanged"
                                   ConstructionOptions="@((e) => CreateEditorOptions(_inputFormat.ToString().ToLower()))"
                                   CssClass="absolute inset-0 h-full w-full" />
         </main>

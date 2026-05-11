@@ -291,4 +291,13 @@
   <data name="OutputCopySuccess_Message" xml:space="preserve">
     <value>Output copied to clipboard.</value>
   </data>
+  <data name="Format_Button" xml:space="preserve">
+    <value>Format</value>
+  </data>
+  <data name="Clear_Button" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="ResetSettings_Button" xml:space="preserve">
+    <value>Reset to Defaults</value>
+  </data>
 </root>

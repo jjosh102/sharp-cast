@@ -64,7 +64,7 @@ public sealed class CSharpToTypeScriptConverter : IModelConverter
         var typeParams = typeParameterNames.ToHashSet(StringComparer.Ordinal);
 
  
-        if (typeDecl is RecordDeclarationSyntax r && r.ParameterList != null)
+        if (typeDecl is RecordDeclarationSyntax r && r.ParameterList is not null)
         {
             foreach (var param in r.ParameterList.Parameters)
             {

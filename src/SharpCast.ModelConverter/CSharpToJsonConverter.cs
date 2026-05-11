@@ -15,7 +15,7 @@ public sealed class CSharpToJsonConverter : IModelConverter<JsonSerializerOption
             var root = tree.GetRoot();
 
             var obj = root.DescendantNodes().OfType<ObjectCreationExpressionSyntax>().FirstOrDefault();
-            if (obj != null && obj.Initializer != null)
+            if (obj is not null && obj.Initializer is not null)
             {
                 json = ConvertObjectInitializer(obj, jsonOptions);
                 return true;
@@ -51,7 +51,7 @@ public sealed class CSharpToJsonConverter : IModelConverter<JsonSerializerOption
                 props[p.Identifier.Text] = SampleValue(p.Type);
             }
 
-            if (t is RecordDeclarationSyntax r && r.ParameterList != null)
+            if (t is RecordDeclarationSyntax r && r.ParameterList is not null)
             {
                 foreach (var p in r.ParameterList.Parameters)
                 {
